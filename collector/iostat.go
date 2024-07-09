@@ -29,7 +29,6 @@ type GZDiskErrorsCollector struct {
 
 // NewGZDiskErrorsExporter returns a newly allocated exporter GZDiskErrorsCollector.
 // It exposes the number of hardware disk errors
-//func NewGZDiskErrorsExporter() (*GZDiskErrorsCollector, error) {
 func NewGZDiskErrorsExporter(logger log.Logger) (Collector, error) {
 
 	return &GZDiskErrorsCollector{
@@ -56,12 +55,10 @@ func (e *GZDiskErrorsCollector) Update(ch chan<- prometheus.Metric) error {
 func (e *GZDiskErrorsCollector) iostat() {
 	out, eerr := exec.Command("iostat", "-en").Output()
 	if eerr != nil {
-		//log.Errorf("error on executing iostat: %v", eerr)
 		level.Error(e.logger).Log("error on executing iostat: %v", eerr)
 	}
 	perr := e.parseIostatOutput(string(out))
 	if perr != nil {
-		// log.Errorf("error on parsing iostat: %v", perr)
 		level.Error(e.logger).Log("error on parsing iostat: %v", perr)
 	}
 }
