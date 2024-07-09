@@ -143,11 +143,11 @@ func (e *GZZpoolListCollector) parseZpoolListOutput(out string) error {
 			e.gzZpoolListFaulty.With(prometheus.Labels{"zpool": "zones"}).Set(1)
 		}
 
-		e.gzZpoolListAlloc.With(prometheus.Labels{"zpool": "zones"}).Set(allocBytes)
-		e.gzZpoolListCapacity.With(prometheus.Labels{"zpool": "zones"}).Set(capPercentTrim)
-		e.gzZpoolListFrag.With(prometheus.Labels{"zpool": "zones"}).Set(fragPercentTrim)
-		e.gzZpoolListFree.With(prometheus.Labels{"zpool": "zones"}).Set(freeBytes)
-		e.gzZpoolListSize.With(prometheus.Labels{"zpool": "zones"}).Set(sizeBytes)
+		e.gzZpoolListAlloc.With(prometheus.Labels{"zpool": parsedLine[0]}).Set(allocBytes)
+		e.gzZpoolListCapacity.With(prometheus.Labels{"zpool": parsedLine[0]}).Set(capPercentTrim)
+		e.gzZpoolListFrag.With(prometheus.Labels{"zpool": parsedLine[0]}).Set(fragPercentTrim)
+		e.gzZpoolListFree.With(prometheus.Labels{"zpool": parsedLine[0]}).Set(freeBytes)
+		e.gzZpoolListSize.With(prometheus.Labels{"zpool": parsedLine[0]}).Set(sizeBytes)
 	}
 	return nil
 }
