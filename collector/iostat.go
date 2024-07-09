@@ -33,7 +33,7 @@ func NewGZDiskErrorsExporter(logger log.Logger) (Collector, error) {
 
 	return &GZDiskErrorsCollector{
 		gzDiskErrors: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "smartos_disk_errs_total",
+			Name: "iostat_disk_errs_total",
 			Help: "Number of hardware disk errors.",
 		}, []string{"device", "error_type"}),
 		logger: logger,
