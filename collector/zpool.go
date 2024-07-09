@@ -36,27 +36,27 @@ type GZZpoolListCollector struct {
 func NewGZZpoolListExporter(logger log.Logger) (Collector, error) {
 	return &GZZpoolListCollector{
 		gzZpoolListAlloc: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "smartos_zpool_alloc_bytes",
+			Name: "zpool_alloc_bytes",
 			Help: "ZFS zpool allocated size in bytes.",
 		}, []string{"zpool"}),
 		gzZpoolListCapacity: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "smartos_zpool_cap_percents",
+			Name: "zpool_cap_percents",
 			Help: "ZFS zpool capacity in percents.",
 		}, []string{"zpool"}),
 		gzZpoolListFaulty: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "smartos_zpool_faults",
+			Name: "zpool_faults",
 			Help: "ZFS zpool health status.",
 		}, []string{"zpool"}),
 		gzZpoolListFrag: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "smartos_zpool_frag_percents",
+			Name: "zpool_frag_percents",
 			Help: "ZFS zpool fragmentation in percents.",
 		}, []string{"zpool"}),
 		gzZpoolListFree: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "smartos_zpool_free_bytes",
+			Name: "zpool_free_bytes",
 			Help: "ZFS zpool space available in bytes.",
 		}, []string{"zpool"}),
 		gzZpoolListSize: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "smartos_zpool_size_bytes",
+			Name: "zpool_size_bytes",
 			Help: "ZFS zpool allocated size in bytes.",
 		}, []string{"zpool"}),
 		logger: logger,
