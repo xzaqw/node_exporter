@@ -114,7 +114,7 @@ func (e *GZZpoolListCollector) parseZpoolListOutput(out string) error {
 			n = 1
 		}
 
-		sizeBytes, err := strconv.ParseFloat(parsedLine[2], 64)
+		sizeBytes, err := strconv.ParseFloat(parsedLine[1], 64)
 		if err != nil {
 			return err
 		}
