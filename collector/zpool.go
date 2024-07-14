@@ -30,6 +30,7 @@ type GZZpoolListCollector struct {
 	gzZpoolListHealth	*prometheus.GaugeVec
 	gzZpoolListLeaked	*prometheus.GaugeVec
 	gzZpoolListGuid		*prometheus.GaugeVec
+	gzZfsLogicalUsed	*prometheus.GaugeVec
 	logger	log.Logger
 }
 
@@ -78,7 +79,13 @@ func NewGZZpoolListExporter(logger log.Logger) (Collector, error) {
 			Name: "zpool_guid",
 			Help: "zpool guid.",
 		}, []string{"zpool"}),
+
+		gzZfsLogicalUsed: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "zpool_zfs_logicalused_mbytes",
+			Help: "zfs logicalused.",
+		}, []string{"zpool"}),
 		logger: logger,
+
 	}, nil
 }
 
@@ -92,11 +99,13 @@ func (e *GZZpoolListCollector) Describe(ch chan<- *prometheus.Desc) {
 	e.gzZpoolListHealth.Describe(ch)
 	e.gzZpoolListLeaked.Describe(ch)
 	e.gzZpoolListGuid.Describe(ch)
+	e.gzZfsLogicalUsed.Describe(ch)
 }
 
 // Collect fetches the stats.
 func (e *GZZpoolListCollector) Update(ch chan<- prometheus.Metric) error {
 	e.zpoolGet()
+	e.zfsGet()
 	e.gzZpoolListAlloc.Collect(ch)
 	e.gzZpoolListFrag.Collect(ch)
 	e.gzZpoolListFree.Collect(ch)
@@ -105,6 +114,7 @@ func (e *GZZpoolListCollector) Update(ch chan<- prometheus.Metric) error {
 	e.gzZpoolListHealth.Collect(ch)
 	e.gzZpoolListLeaked.Collect(ch)
 	e.gzZpoolListGuid.Collect(ch)
+	e.gzZfsLogicalUsed.Collect(ch)
 	return nil;
 }
 
@@ -121,6 +131,22 @@ func (e *GZZpoolListCollector) zpoolGet() error {
 	}
 	return nil
 }
+
+//Yes, zfs get. Though we already have a dedicated collector for zfs,
+//but here we need to retrieve only some pool-related statistics
+func (e *GZZpoolListCollector) zfsGet() error {
+	out, eerr := exec.Command("zfs", "get", "-Hp", "logicalused").Output()
+	if eerr != nil {
+		level.Error(e.logger).Log("error on executing zfs: %v", eerr)
+	} else {
+		perr := e.parseZfsGetOutput(string(out))
+		if perr != nil {
+			level.Error(e.logger).Log("error on parsing zpool: %v", perr)
+		}
+	}
+	return nil
+}
+
 
 func (e *GZZpoolListCollector) parseZpoolGetOutput(out string) error {
 	outlines := strings.Split(out, "\n")
@@ -184,6 +210,25 @@ func (e *GZZpoolListCollector) parseZpoolGetOutput(out string) error {
 			e.gzZpoolListGuid.With(prometheus.Labels{"zpool": pool_name}).Set(pval)
 */
 		}
+	}
+	return nil
+}
+
+func (e *GZZpoolListCollector) parseZfsGetOutput(out string) error {
+	outlines := strings.Split(out, "\n")
+	l := len(outlines)
+	for _, line := range outlines[0 : l-1] {
+		parsed_line := strings.Fields(line)
+		name := parsed_line[0]
+		pval, err := strconv.ParseFloat(parsed_line[2], 64)
+		if err != nil {
+			return err
+		}
+
+		if strings.Contains(name, "/") {
+			continue
+		}
+		e.gzZfsLogicalUsed.With(prometheus.Labels{"zpool": name}).Set(float64(pval / 1024 / 1024))
 	}
 	return nil
 }
