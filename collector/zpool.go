@@ -7,6 +7,7 @@
 package collector
 
 import (
+	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -218,6 +219,9 @@ func (e *GZZpoolListCollector) parseZfsGetOutput(out string) error {
 	outlines := strings.Split(out, "\n")
 	l := len(outlines)
 	for _, line := range outlines[0 : l-1] {
+		fmt.Print("parsing line:\n")
+		fmt.Print(line)
+		fmt.Print("\n")
 		parsed_line := strings.Fields(line)
 		name := parsed_line[0]
 		pval, err := strconv.ParseFloat(parsed_line[2], 64)
