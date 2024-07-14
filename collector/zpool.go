@@ -7,7 +7,6 @@
 package collector
 
 import (
-	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -219,17 +218,17 @@ func (e *GZZpoolListCollector) parseZfsGetOutput(out string) error {
 	outlines := strings.Split(out, "\n")
 	l := len(outlines)
 	for _, line := range outlines[0 : l-1] {
-		fmt.Print("parsing line:\n")
-		fmt.Print(line)
-		fmt.Print("\n")
 		parsed_line := strings.Fields(line)
 		name := parsed_line[0]
+		if strings.Contains(name, "/") {
+			continue
+		}
+		if parsed_line[2] == "-" {
+			continue
+		}
 		pval, err := strconv.ParseFloat(parsed_line[2], 64)
 		if err != nil {
-			return err
-		}
-
-		if strings.Contains(name, "/") {
+			level.Error(e.logger).Log("error on parsing zfs output: %v", err)
 			continue
 		}
 		e.gzZfsLogicalUsed.With(prometheus.Labels{"zpool": name}).Set(float64(pval / 1024 / 1024))
