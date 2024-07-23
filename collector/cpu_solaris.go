@@ -30,6 +30,7 @@ import "C"
 type cpuCollector struct {
 	cpu_seconds typedDesc
 	cpu_ticks typedDesc
+	cpu_load_intr typedDesc
 	logger log.Logger
 }
 
@@ -39,13 +40,22 @@ func init() {
 
 func NewCpuCollector(logger log.Logger) (Collector, error) {
 	return &cpuCollector{
-		cpu_seconds:    typedDesc{nodeCPUSecondsDesc, prometheus.CounterValue},
+		cpu_seconds: typedDesc{nodeCPUSecondsDesc, prometheus.CounterValue},
+
 		cpu_ticks: typedDesc{
 			prometheus.NewDesc(
 				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "ticks_total"),
 				"Ticks the CPUs spent in each mode.",
 				[]string{"cpu", "mode"}, nil,
 			), prometheus.CounterValue},
+
+		cpu_load_intr: typedDesc{
+			prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "load_intr_percents"),
+				"Interrupt load factor.",
+				[]string{"cpu"}, nil,
+			), prometheus.GaugeValue},
+
 		logger: logger,
 	}, nil
 }
@@ -62,9 +72,7 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 
 	for cpu := 0; cpu < int(ncpus); cpu++ {
 		ksCPU, err := tok.Lookup("cpu", cpu, "sys")
-		if err != nil {
-			return err
-		}
+		if err != nil { goto exit }
 
 		for k, v := range map[string]string{
 			"idle":   "cpu_nsec_idle",
@@ -74,13 +82,11 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 			"dtrace": "cpu_nsec_dtrace",
 		} {
 			kstatValue, err := ksCPU.GetNamed(v)
-			if err != nil {
-				return err
-			}
-
+			if (err != nil) { goto exit }
 			ch <- c.cpu_seconds.mustNewConstMetric(
 				float64(kstatValue.UintVal)/1e9, strconv.Itoa(cpu), k)
 		}
+
 		for k, v := range map[string]string{
 			"idle":   "cpu_ticks_idle",
 			"kernel": "cpu_ticks_kernel",
@@ -88,12 +94,19 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 			"intr":   "cpu_ticks_wait",
 		} {
 			kstatValue, err := ksCPU.GetNamed(v)
-			if err != nil {
-				return err
-			}
-
-			ch <- c.cpu_ticks.mustNewConstMetric(float64(kstatValue.UintVal), strconv.Itoa(cpu), k)
+			if err != nil { goto exit }
+			ch <- c.cpu_ticks.mustNewConstMetric(
+				float64(kstatValue.UintVal), strconv.Itoa(cpu), k)
 		}
+
+		kstatValue, err := ksCPU.GetNamed("cpu_load_intr")
+		if err != nil { goto exit }
+		ch <- c.cpu_load_intr.mustNewConstMetric(
+			float64(kstatValue.UintVal), strconv.Itoa(cpu))
+	}
+exit:
+	if err != nil {
+		return err
 	}
 	return nil
 }
