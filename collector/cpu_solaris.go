@@ -38,6 +38,7 @@ type cpuCollector struct {
 	sysexec typedDesc
 	sysfork typedDesc
 	sysread typedDesc
+	sysvfork typedDesc
 	logger log.Logger
 }
 
@@ -112,6 +113,15 @@ func NewCpuCollector(logger log.Logger) (Collector, error) {
 				"read() + readv() system calls.",
 				[]string{"cpu"}, nil,
 			), prometheus.CounterValue},
+
+		sysvfork: typedDesc{
+			prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "sysvfork_total"),
+				"vforks.",
+				[]string{"cpu"}, nil,
+			), prometheus.CounterValue},
+
+
 		logger: logger,
 	}, nil
 }
@@ -198,6 +208,11 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 		kstatValue, err = ksCPU.GetNamed("sysread")
 		if err != nil { goto exit }
 		ch <- c.sysread.mustNewConstMetric(
+			float64(kstatValue.UintVal), strconv.Itoa(cpu))
+
+		kstatValue, err = ksCPU.GetNamed("sysvfork")
+		if err != nil { goto exit }
+		ch <- c.sysvfork.mustNewConstMetric(
 			float64(kstatValue.UintVal), strconv.Itoa(cpu))
 	}
 exit:
