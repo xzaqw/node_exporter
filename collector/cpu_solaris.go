@@ -34,6 +34,7 @@ type cpuCollector struct {
 	cpumigrate typedDesc
 	iowait typedDesc
 	nthreads typedDesc
+	syscall typedDesc
 	logger log.Logger
 }
 
@@ -77,9 +78,17 @@ func NewCpuCollector(logger log.Logger) (Collector, error) {
 		nthreads: typedDesc{
 			prometheus.NewDesc(
 				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "nthreads_total"),
-				"thread_create()s total.",
+				"thread_create()s.",
 				[]string{"cpu"}, nil,
-			), prometheus.GaugeValue},
+			), prometheus.CounterValue},
+
+		syscall: typedDesc{
+			prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "syscall_total"),
+				"system calls.",
+				[]string{"cpu"}, nil,
+			), prometheus.CounterValue},
+
 
 
 		logger: logger,
@@ -150,7 +159,10 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 		ch <- c.nthreads.mustNewConstMetric(
 			float64(kstatValue.UintVal), strconv.Itoa(cpu))
 
-
+		kstatValue, err = ksCPU.GetNamed("syscall")
+		if err != nil { goto exit }
+		ch <- c.syscall.mustNewConstMetric(
+			float64(kstatValue.UintVal), strconv.Itoa(cpu))
 	}
 exit:
 	if err != nil {
