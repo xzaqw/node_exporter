@@ -28,7 +28,8 @@ import (
 import "C"
 
 type cpuCollector struct {
-	cpu    typedDesc
+	cpu_seconds typedDesc
+	cpu_ticks typedDesc
 	logger log.Logger
 }
 
@@ -38,7 +39,13 @@ func init() {
 
 func NewCpuCollector(logger log.Logger) (Collector, error) {
 	return &cpuCollector{
-		cpu:    typedDesc{nodeCPUSecondsDesc, prometheus.CounterValue},
+		cpu_seconds:    typedDesc{nodeCPUSecondsDesc, prometheus.CounterValue},
+		cpu_ticks: typedDesc{
+			prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "ticks_total"),
+				"Ticks the CPUs spent in each mode.",
+				[]string{"cpu", "mode"}, nil,
+			), prometheus.CounterValue},
 		logger: logger,
 	}, nil
 }
@@ -65,14 +72,27 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 			"user":   "cpu_nsec_user",
 			"intr":   "cpu_nsec_intr",
 			"dtrace": "cpu_nsec_dtrace",
-
 		} {
 			kstatValue, err := ksCPU.GetNamed(v)
 			if err != nil {
 				return err
 			}
 
-			ch <- c.cpu.mustNewConstMetric(float64(kstatValue.UintVal)/1e9, strconv.Itoa(cpu), k)
+			ch <- c.cpu_seconds.mustNewConstMetric(
+				float64(kstatValue.UintVal)/1e9, strconv.Itoa(cpu), k)
+		}
+		for k, v := range map[string]string{
+			"idle":   "cpu_ticks_idle",
+			"kernel": "cpu_ticks_kernel",
+			"user":   "cpu_ticks_user",
+			"intr":   "cpu_ticks_wait",
+		} {
+			kstatValue, err := ksCPU.GetNamed(v)
+			if err != nil {
+				return err
+			}
+
+			ch <- c.cpu_ticks.mustNewConstMetric(float64(kstatValue.UintVal), strconv.Itoa(cpu), k)
 		}
 	}
 	return nil
