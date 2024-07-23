@@ -40,6 +40,7 @@ type cpuCollector struct {
 	sysread typedDesc
 	sysvfork typedDesc
 	syswrite typedDesc
+	trap typedDesc
 	logger log.Logger
 }
 
@@ -126,6 +127,13 @@ func NewCpuCollector(logger log.Logger) (Collector, error) {
 			prometheus.NewDesc(
 				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "syswrite_total"),
 				"write() + writev() system calls.",
+				[]string{"cpu"}, nil,
+			), prometheus.CounterValue},
+
+		trap: typedDesc{
+			prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "trap_total"),
+				"traps.",
 				[]string{"cpu"}, nil,
 			), prometheus.CounterValue},
 
@@ -225,6 +233,11 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 		kstatValue, err = ksCPU.GetNamed("syswrite")
 		if err != nil { goto exit }
 		ch <- c.syswrite.mustNewConstMetric(
+			float64(kstatValue.UintVal), strconv.Itoa(cpu))
+
+		kstatValue, err = ksCPU.GetNamed("trap")
+		if err != nil { goto exit }
+		ch <- c.trap.mustNewConstMetric(
 			float64(kstatValue.UintVal), strconv.Itoa(cpu))
 	}
 exit:
