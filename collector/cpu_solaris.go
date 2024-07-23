@@ -63,7 +63,6 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 			"idle":   "cpu_nsec_idle",
 			"kernel": "cpu_nsec_kernel",
 			"user":   "cpu_nsec_user",
-			"wait":   "cpu_nsec_wait",
 		} {
 			kstatValue, err := ksCPU.GetNamed(v)
 			if err != nil {
