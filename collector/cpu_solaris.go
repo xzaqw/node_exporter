@@ -32,6 +32,7 @@ type cpuCollector struct {
 	cpu_ticks typedDesc
 	cpu_load_intr typedDesc
 	cpumigrate typedDesc
+	iowait typedDesc
 	logger log.Logger
 }
 
@@ -62,6 +63,13 @@ func NewCpuCollector(logger log.Logger) (Collector, error) {
 			prometheus.NewDesc(
 				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "cpumigrate_total"),
 				"CPU migrations by threads.",
+				[]string{"cpu"}, nil,
+			), prometheus.CounterValue},
+
+		iowait: typedDesc{
+			prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "iowait_total"),
+				"Procs waiting for block I/O.",
 				[]string{"cpu"}, nil,
 			), prometheus.CounterValue},
 
@@ -122,6 +130,12 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 		if err != nil { goto exit }
 		ch <- c.cpumigrate.mustNewConstMetric(
 			float64(kstatValue.UintVal), strconv.Itoa(cpu))
+
+		kstatValue, err = ksCPU.GetNamed("iowait")
+		if err != nil { goto exit }
+		ch <- c.iowait.mustNewConstMetric(
+			float64(kstatValue.UintVal), strconv.Itoa(cpu))
+
 	}
 exit:
 	if err != nil {
