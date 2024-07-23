@@ -41,6 +41,12 @@ type cpuCollector struct {
 	sysvfork typedDesc
 	syswrite typedDesc
 	trap typedDesc
+	idlethread typedDesc 
+	intrblk typedDesc
+	intrthread typedDesc
+	inv_swtch typedDesc
+	mutex_adenters typedDesc
+	xcalls typedDesc
 	logger log.Logger
 }
 
@@ -134,6 +140,48 @@ func NewCpuCollector(logger log.Logger) (Collector, error) {
 			prometheus.NewDesc(
 				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "trap_total"),
 				"traps.",
+				[]string{"cpu"}, nil,
+			), prometheus.CounterValue},
+
+		idlethread: typedDesc{
+			prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "idlethread_total"),
+				"times idle thread scheduled.",
+				[]string{"cpu"}, nil,
+			), prometheus.CounterValue},
+
+		intrblk: typedDesc{
+			prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "intrblk_total"),
+				"ints blkd/prempted/rel'd (swtch).",
+				[]string{"cpu"}, nil,
+			), prometheus.CounterValue},
+
+		intrthread: typedDesc{
+			prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "intrthread_total"),
+				"interrupts as threads (below clock).",
+				[]string{"cpu"}, nil,
+			), prometheus.CounterValue},
+
+		inv_swtch: typedDesc{
+			prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "inv_swtch_total"),
+				"involuntary context switches.",
+				[]string{"cpu"}, nil,
+			), prometheus.CounterValue},
+
+		mutex_adenters: typedDesc{
+			prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "mutex_adenters_total"),
+				"failed mutex enters (adaptive)	.",
+				[]string{"cpu"}, nil,
+			), prometheus.CounterValue},
+
+		xcalls: typedDesc{
+			prometheus.NewDesc(
+				prometheus.BuildFQName(namespace, cpuCollectorSubsystem, "xcalls_total"),
+				"xcalls to other cpus.",
 				[]string{"cpu"}, nil,
 			), prometheus.CounterValue},
 
@@ -238,6 +286,36 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 		kstatValue, err = ksCPU.GetNamed("trap")
 		if err != nil { goto exit }
 		ch <- c.trap.mustNewConstMetric(
+			float64(kstatValue.UintVal), strconv.Itoa(cpu))
+
+		kstatValue, err = ksCPU.GetNamed("idlethread")
+		if err != nil { goto exit }
+		ch <- c.idlethread.mustNewConstMetric(
+			float64(kstatValue.UintVal), strconv.Itoa(cpu))
+
+		kstatValue, err = ksCPU.GetNamed("intrblk")
+		if err != nil { goto exit }
+		ch <- c.intrblk.mustNewConstMetric(
+			float64(kstatValue.UintVal), strconv.Itoa(cpu))
+
+		kstatValue, err = ksCPU.GetNamed("intrthread")
+		if err != nil { goto exit }
+		ch <- c.intrthread.mustNewConstMetric(
+			float64(kstatValue.UintVal), strconv.Itoa(cpu))
+
+		kstatValue, err = ksCPU.GetNamed("inv_swtch")
+		if err != nil { goto exit }
+		ch <- c.inv_swtch .mustNewConstMetric(
+			float64(kstatValue.UintVal), strconv.Itoa(cpu))
+
+		kstatValue, err = ksCPU.GetNamed("mutex_adenters")
+		if err != nil { goto exit }
+		ch <- c.mutex_adenters .mustNewConstMetric(
+			float64(kstatValue.UintVal), strconv.Itoa(cpu))
+
+		kstatValue, err = ksCPU.GetNamed("xcalls")
+		if err != nil { goto exit }
+		ch <- c.xcalls .mustNewConstMetric(
 			float64(kstatValue.UintVal), strconv.Itoa(cpu))
 	}
 exit:
