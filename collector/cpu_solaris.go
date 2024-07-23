@@ -233,90 +233,30 @@ func (c *cpuCollector) Update(ch chan<- prometheus.Metric) error {
 				float64(kstatValue.UintVal), strconv.Itoa(cpu), k)
 		}
 
-		kstatValue, err = ksCPU.GetNamed("cpu_load_intr")
-		if err != nil { goto exit }
-		ch <- c.cpu_load_intr.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("cpumigrate")
-		if err != nil { goto exit }
-		ch <- c.cpumigrate.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("iowait")
-		if err != nil { goto exit }
-		ch <- c.iowait.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("nthreads")
-		if err != nil { goto exit }
-		ch <- c.nthreads.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("syscall")
-		if err != nil { goto exit }
-		ch <- c.syscall.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("sysexec")
-		if err != nil { goto exit }
-		ch <- c.sysexec.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("sysfork")
-		if err != nil { goto exit }
-		ch <- c.sysfork.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("sysread")
-		if err != nil { goto exit }
-		ch <- c.sysread.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("sysvfork")
-		if err != nil { goto exit }
-		ch <- c.sysvfork.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("syswrite")
-		if err != nil { goto exit }
-		ch <- c.syswrite.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("trap")
-		if err != nil { goto exit }
-		ch <- c.trap.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("idlethread")
-		if err != nil { goto exit }
-		ch <- c.idlethread.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("intrblk")
-		if err != nil { goto exit }
-		ch <- c.intrblk.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("intrthread")
-		if err != nil { goto exit }
-		ch <- c.intrthread.mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("inv_swtch")
-		if err != nil { goto exit }
-		ch <- c.inv_swtch .mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("mutex_adenters")
-		if err != nil { goto exit }
-		ch <- c.mutex_adenters .mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
-
-		kstatValue, err = ksCPU.GetNamed("xcalls")
-		if err != nil { goto exit }
-		ch <- c.xcalls .mustNewConstMetric(
-			float64(kstatValue.UintVal), strconv.Itoa(cpu))
+		for k,inst := range map[string]typedDesc{
+			"cpu_load_intr": c.cpu_load_intr,
+			"cpumigrate": c.cpumigrate,
+			"iowait": c.iowait,
+			"nthreads": c.nthreads,
+			"syscall": c.syscall,
+			"sysexec": c.sysexec,
+			"sysfork": c.sysfork,
+			"sysread": c.sysread,
+			"sysvfork": c.sysvfork,
+			"syswrite": c.syswrite,
+			"trap": c.trap,
+			"idlethread": c.idlethread,
+			"intrblk": c.intrblk,
+			"intrthread": c.intrthread,
+			"inv_swtch": c.inv_swtch,
+			"mutex_adenters": c.mutex_adenters,
+			"xcalls": c.xcalls,
+		} {
+			kstatValue, err = ksCPU.GetNamed(k)
+			if err != nil { goto exit }
+			ch <- inst.mustNewConstMetric(
+				float64(kstatValue.UintVal), strconv.Itoa(cpu))
+		}
 	}
 exit:
 	if err != nil {
