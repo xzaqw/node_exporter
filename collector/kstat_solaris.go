@@ -1,7 +1,6 @@
 package collector
 
 import (
-	"fmt"
 	"strconv"
 	"github.com/go-kit/log"
 	"github.com/illumos/go-kstat"
@@ -41,7 +40,6 @@ func NewKstatCollector(logger log.Logger) (Collector, error) {
 
 	err = cfg.init()
 	if err != nil {
-		fmt.Print(err)
 		return nil, err 
 	}
 
@@ -96,7 +94,9 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 
 				for _,stat := range name.stats {
 					kstatValue, err = ksName.GetNamed(stat.ID)
-					if (err != nil) { goto exit }
+					if (err != nil) {
+						goto exit 
+					}
 					v := float64(kstatValue.UintVal) * stat.scaleFactor
 
 					//Round the value down to the number integer value 
