@@ -95,13 +95,11 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 			inst := 0
 			for {
 				ksName, err := tok.Lookup(module.ID, inst, name.ID)
-				if err != nil { goto exit }
+				if err != nil { break }
 
 				for _,stat := range name.stats {
 					kstatValue, err = ksName.GetNamed(stat.ID)
-					if (err != nil) {
-						break 
-					}
+					if (err != nil) { goto exit }
 					v := float64(kstatValue.UintVal) * stat.scaleFactor
 					//Reason for this type switching is that we need to round the value down
 					//to the number integer value like 2.45 to 2.0. At the same time we have 
