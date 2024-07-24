@@ -1,0 +1,32 @@
+---
+#node_kstat_cpu_sys_ticks_kernel_total
+#kstat_modules[].id: kstat module string
+#kstat_modules[].kstat_names: array of module representations
+#kstat_modules[]kstat_names[].id kstat name string
+#kstat_modules[]kstat_names[].kstat_stats: array of statistics representations
+#kstat_modules[]kstat_names[].kstat_stats[].id: kstat statistic representation
+#kstat_modules[]kstat_names[].kstat_stats[].suffix: metric suffix 
+#       to be providedin the end of metric name.
+#       NOTE: the final metric name would provided in the following way:
+#         node_kstat_<kstat_module>_<kstat_name>_<kstat_statistic>_<suffix>
+#kstat_modules[]kstat_names[].kstat_stats[].type: metric type (counter/gauge)
+#kstat_modules[]kstat_names[].kstat_stats[].help: metric help
+#kstat_modules[]kstat_names[].kstat_stats[].scale_factor: number the metric value to be 
+#       multiplied with before the final representation 
+
+kstat_modules:
+  - id: cpu
+    kstat_names:
+      - id: sys
+        kstat_stats:
+          - id: cpu_ticks_idle
+            suffix: total
+            type: counter
+            help: Ticks the CPU spent in idle mode
+            scale_factor: 1
+
+          - id: cpu_ticks_kernel
+            suffix: total
+            type: counter
+            help: Ticks the CPU spent in kernel mode
+            scale_factor: 1
