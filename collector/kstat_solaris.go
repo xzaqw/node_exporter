@@ -8,9 +8,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-// #include <unistd.h>
-import "C"
-
 type kstatStat struct {
 	ID string
 	scaleFactor float64
@@ -83,7 +80,6 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 	var (	kstatValue *kstat.Named
 		err error
 	)
-	//ncpus := C.sysconf(C._SC_NPROCESSORS_ONLN)
 
 	tok, err := kstat.Open()
 	if err != nil { goto exit }
@@ -92,6 +88,7 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 
 	for _,module := range c.modules {
 		for _,name := range module.names {
+			//Walk through all instances
 			inst := 0
 			for {
 				ksName, err := tok.Lookup(module.ID, inst, name.ID)
@@ -101,8 +98,9 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 					kstatValue, err = ksName.GetNamed(stat.ID)
 					if (err != nil) { goto exit }
 					v := float64(kstatValue.UintVal) * stat.scaleFactor
-					//Reason for this type switching is that we need to round the value down
-					//to the number integer value like 2.45 to 2.0. At the same time we have 
+
+					//Round the value down to the number integer value 
+					//like 2.45 to 2.0. At the same time we have 
 					//to stick to float64 type.
 					ch <- stat.desc.mustNewConstMetric(float64(int(v)), strconv.Itoa(inst))
 				}
