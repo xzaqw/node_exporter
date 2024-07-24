@@ -232,3 +232,53 @@ kstat_modules:
             help: 
             scale_factor: 1
 
+  - id: unix
+    kstat_names:
+      - id: system_pages
+        kstat_stats:
+
+          - id: pagesfree
+            suffix: total
+            type: counter
+            help: 
+            scale_factor: 1
+
+          - id: pageslocked
+            suffix: total
+            type: counter
+            help: 
+            scale_factor: 1
+
+          - id: pagestotal
+            suffix: total
+            type: counter
+            help: 
+            scale_factor: 1
+
+          - id: physmem
+            suffix: total
+            type: counter
+            help: 
+            scale_factor: 1
+
+
+      - id: pset
+        kstat_stats:
+
+          - id: avenrun_15min
+            suffix: total
+            type: counter
+            help: 
+            scale_factor: 1
+
+          - id: avenrun_5min
+            suffix: total
+            type: counter
+            help: 
+            scale_factor: 1
+
+          - id: avenrun_1min
+            suffix: total
+            type: counter
+            help: 
+            scale_factor: 1
