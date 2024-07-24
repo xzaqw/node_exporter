@@ -217,3 +217,18 @@ kstat_modules:
             type: counter
             help: 
             scale_factor: 1
+
+      - id: vm
+        kstat_stats:
+          - id: pgswapin
+            suffix: total
+            type: counter
+            help: 
+            scale_factor: 1
+
+          - id: pgswapout
+            suffix: total
+            type: counter
+            help: 
+            scale_factor: 1
+
