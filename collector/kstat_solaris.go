@@ -92,8 +92,6 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 
 	for _,module := range c.modules {
 		for _,name := range module.names {
-			/* TODO switch to all-elements lookup */
-//			for cpu := 0; cpu < int(ncpus); cpu++ {
 			inst := 0
 			for {
 				ksName, err := tok.Lookup(module.ID, inst, name.ID)
@@ -104,9 +102,11 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 					if (err != nil) {
 						break 
 					}
-					ch <- stat.desc.mustNewConstMetric(
-						float64(kstatValue.UintVal)  * stat.scaleFactor, 
-						strconv.Itoa(inst))
+					v := float64(kstatValue.UintVal) * stat.scaleFactor
+					//Reason for this type switching is that we need to round the value down
+					//to the number integer value like 2.45 to 2.0. At the same time we have 
+					//to stick to float64 type.
+					ch <- stat.desc.mustNewConstMetric(float64(int(v)), strconv.Itoa(inst))
 				}
 				inst++
 			}
