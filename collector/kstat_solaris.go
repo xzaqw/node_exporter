@@ -38,13 +38,16 @@ func init() {
 func NewKstatCollector(logger log.Logger) (Collector, error) {
 	var (	c kstatCollector
 		cfg kstatConfig
-		err error
 	)
 
-	err = cfg.init()
+	/*
+	cfg, err = cfg.init()
 	if err != nil {
 		return nil, err 
 	}
+	*/
+
+	cfg = kstatConfigInstance
 	for _, cfgModule := range cfg.KstatModules {
 		module := kstatModule{}
 		module.ID = cfgModule.ID
