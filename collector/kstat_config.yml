@@ -266,19 +266,19 @@ kstat_modules:
         kstat_stats:
 
           - id: avenrun_15min
-            suffix: total
+            suffix: percents
             type: counter
-            help: 
+            help: 15 min CPU load average
             scale_factor: 1
 
           - id: avenrun_5min
-            suffix: total
+            suffix: percents
             type: counter
-            help: 
+            help: 5 min CPU load average
             scale_factor: 1
 
           - id: avenrun_1min
-            suffix: total
+            suffix: percents
             type: counter
-            help: 
+            help: 1 min CPU load average
             scale_factor: 1
