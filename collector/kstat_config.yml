@@ -99,37 +99,37 @@ kstat_modules:
             scale_factor: 1
 
           - id: cpu_nsec_dtrace
-            suffix: seconds
+            suffix: seconds_total
             type: counter
             help: Seconds the CPU spent in dtrace mode
             scale_factor: 1e-9
 
           - id: cpu_nsec_idle
-            suffix: seconds
+            suffix: seconds_total
             type: counter
             help: Seconds the CPU spent in idle mode
             scale_factor: 1e-9
 
           - id: cpu_nsec_intr
-            suffix: seconds
+            suffix: seconds_total
             type: counter
             help: Seconds the CPU spent in interrupt mode
             scale_factor: 1e-9
 
           - id: cpu_nsec_kernel
-            suffix: seconds
+            suffix: seconds_total
             type: counter
             help: Seconds the CPU spent in kernel mode
             scale_factor: 1e-9
 
           - id: cpu_nsec_user
-            suffix: seconds
+            suffix: seconds_total
             type: counter
             help: Seconds the CPU spent in user mode
             scale_factor: 1e-9
 
           - id: cpu_load_intr
-            suffix: total
+            suffix: percents
             type: counter
             help: 
             scale_factor: 1
