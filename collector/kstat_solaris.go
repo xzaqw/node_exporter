@@ -1,8 +1,11 @@
 package collector
 
 import (
+//	"fmt"
 	"strconv"
+	"strings"
 	"github.com/go-kit/log"
+	"github.com/go-kit/log/level"
 	"github.com/illumos/go-kstat"
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -42,8 +45,6 @@ func NewKstatCollector(logger log.Logger) (Collector, error) {
 	if err != nil {
 		return nil, err 
 	}
-
-
 	for _, cfgModule := range cfg.KstatModules {
 		module := kstatModule{}
 		module.ID = cfgModule.ID
@@ -53,17 +54,30 @@ func NewKstatCollector(logger log.Logger) (Collector, error) {
 			for _, cfgStat := range cfgName.KstatStats {
 				stat := kstatStat{}
 				stat.ID = cfgStat.ID
-				stat.desc = typedDesc{prometheus.NewDesc(
+				desc := prometheus.NewDesc(
 					prometheus.BuildFQName(
 						namespace, 
 						"kstat_" + cfgModule.ID + "_" + cfgName.ID,
 						cfgStat.ID + "_" + cfgStat.Suffix),
-					cfgStat.Help, []string{"inst"}, nil,
-					), 
-					prometheus.CounterValue}
+						cfgStat.Help, []string{"inst"}, nil, )
+				stat.desc = typedDesc{ desc, prometheus.CounterValue }
 				stat.scaleFactor = cfgStat.ScaleFactor
 				name.stats = append(name.stats, stat)
 			}
+
+			//Snaptime is separate kind because of 
+			//different way to retrieve this metric
+			stat := kstatStat{}
+			stat.ID = "snaptime"
+			desc := prometheus.NewDesc(
+				prometheus.BuildFQName(
+					namespace, 
+					"kstat_" + cfgModule.ID + "_" + cfgName.ID,
+					"snaptime"),
+					cfgModule.ID + "::" + cfgName.ID + ":" + "snaptime", 
+					[]string{"inst"}, nil, )
+			stat.desc = typedDesc{ desc, prometheus.CounterValue }
+			name.stats = append(name.stats, stat)
 			module.names = append(module.names, name)
 		}
 		c.modules = append(c.modules, module)
@@ -77,41 +91,47 @@ func NewKstatCollector(logger log.Logger) (Collector, error) {
 func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 	var (	kstatValue *kstat.Named
 		err error
+		metricValue float64
 	)
 
 	tok, err := kstat.Open()
-	if err != nil { goto exit }
+	if err != nil { 
+		return err 
+	}
 
 	defer tok.Close()
 
 	for _,module := range c.modules {
 		for _,name := range module.names {
-			//Walk through all instances
 			inst := 0
 			for {
 				ksName, err := tok.Lookup(module.ID, inst, name.ID)
-				if err != nil { break }
-
+				if err != nil {
+					//Handle the instance number out-of-bound error
+					break 
+				}
 				for _,stat := range name.stats {
-					kstatValue, err = ksName.GetNamed(stat.ID)
-					if (err != nil) {
-						goto exit 
+					if strings.HasSuffix(stat.ID, "snaptime") {
+						metricValue = float64(ksName.Snaptime)
+					} else {
+						kstatValue, err = ksName.GetNamed(stat.ID)
+						if (err != nil) {
+							level.Error(c.logger).Log(module.ID + ":" + 
+							strconv.Itoa(inst) + ":" + name.ID + ":" + stat.ID, err)
+							continue
+						}
+						metricValue = float64(kstatValue.UintVal) * stat.scaleFactor
 					}
-					v := float64(kstatValue.UintVal) * stat.scaleFactor
 
 					//Round the value down to the number integer value 
 					//like 2.45 to 2.0. At the same time we have 
 					//to stick to float64 type.
-					ch <- stat.desc.mustNewConstMetric(float64(int(v)), strconv.Itoa(inst))
+					ch <- stat.desc.mustNewConstMetric(float64(int(metricValue)), 
+						strconv.Itoa(inst))
 				}
-				inst++
+				inst++	
 			}
 		}
-	}
-
-exit:
-	if err != nil {
-		return err
 	}
 	return nil
 }
