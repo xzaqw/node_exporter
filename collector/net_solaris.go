@@ -83,14 +83,9 @@ func NewNetCollector(logger log.Logger) (Collector, error) {
 
 
 func (c *netCollector) dladmConfGet() error {
-//dladm show-link -po link,class,mtu,state,bridge,over
 	var (
-		link string
-		class string
-		mtu string
-		state string
-		bridge string
-		over string
+		link, class, mtu, state, bridge, over string
+		err error
 	)
 	out, err := exec.Command("dladm", "show-link", "-po", 
 		"link,class,mtu,state,bridge,over").Output()
@@ -120,7 +115,6 @@ func (c *netCollector) dladmConfGet() error {
 }
 
 func (c *netCollector) dladmStatsGet() error {
-//dladm show-link -pso link,ipackets,opackets,rbytes,obytes,ierrors,oerrors
 	var (
 		link string
 		ipackets, opackets, rbytes,
@@ -184,6 +178,20 @@ func (c *netCollector) Update(ch chan<- prometheus.Metric) error {
 	c.bridge.Collect(ch)
 	c.over.Collect(ch)
 	return nil;
+}
+
+func (c *netCollector) Describe(ch chan<- *prometheus.Desc) {
+	c.iPackets.Describe(ch)
+	c.oPackets.Describe(ch)
+	c.rBytes.Describe(ch)
+	c.oBytes.Describe(ch)
+	c.iErrors.Describe(ch)
+	c.oErrors.Describe(ch)
+	c.class.Describe(ch)
+	c.mtu.Describe(ch)
+	c.state.Describe(ch)
+	c.bridge.Describe(ch)
+	c.over.Describe(ch)
 }
 
 func parseDladmOutput(out string) error {
