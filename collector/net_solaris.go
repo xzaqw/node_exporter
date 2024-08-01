@@ -25,7 +25,7 @@ type netCollector struct {
 }
 
 const (
-	netCollectorSubsystem = "net"
+	netCollectorSubsystem = "net_link"
 )
 
 func init() {
@@ -35,47 +35,47 @@ func init() {
 func NewNetCollector(logger log.Logger) (Collector, error) {
 	return &netCollector {
 		iPackets: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "net_link_ipackets",
+			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "ipackets"),
 			Help: "Link input packets",
 		}, []string{"link"}),
 		oPackets: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "net_link_opackets",
+			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "opackets"),
 			Help: "Link output packets",
 		}, []string{"link"}),
 		rBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "net_link_rbytes",
+			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "rbytes"),
 			Help: "Link received bytes",
 		}, []string{"link"}),
 		oBytes: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "net_link_obytes",
+			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "obytes"),
 			Help: "Link transmitted bytes",
 		}, []string{"link"}),
 		iErrors: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "net_link_ierrors",
+			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "ierrors"),
 			Help: "Link receive errors",
 		}, []string{"link"}),
 		oErrors: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "net_link_oerrors",
+			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "oerrors"),
 			Help: "Link output errors",
 		}, []string{"link"}),
 		class: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "net_link_class",
+			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "class"),
 			Help: "Link class",
 		}, []string{"link", "class"}),
 		mtu: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "net_link_mtu",
+			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "mtu"),
 			Help: "Link MTU",
 		}, []string{"link", "mtu"}),
 		state: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "net_link_state",
+			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "state"),
 			Help: "Link state",
 		}, []string{"link", "state"}),
 		bridge: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "net_link_bridge",
+			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "bridge"),
 			Help: "Link bridge",
 		}, []string{"link", "bridge"}),
 		over: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "net_link_over",
+			Name: prometheus.BuildFQName(namespace, netCollectorSubsystem, "over"),
 			Help: "Link over",
 		}, []string{"link", "over"}),
 	}, nil
