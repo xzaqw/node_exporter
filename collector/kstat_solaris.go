@@ -38,6 +38,7 @@ func init() {
 func NewKstatCollector(logger log.Logger) (Collector, error) {
 	var (	c kstatCollector
 		cfg kstatConfig
+		label string
 	)
 
 	/*
@@ -55,6 +56,11 @@ func NewKstatCollector(logger log.Logger) (Collector, error) {
 			name := kstatName{}
 			name.ID = cfgName.ID
 			for _, cfgStat := range cfgName.KstatStats {
+				if cfgStat.LabelString == "" {
+					label = "instance"
+				} else {
+					label = cfgStat.LabelString
+				}
 				stat := kstatStat{}
 				stat.ID = cfgStat.ID
 				desc := prometheus.NewDesc(
@@ -62,7 +68,7 @@ func NewKstatCollector(logger log.Logger) (Collector, error) {
 						namespace, 
 						"kstat_" + cfgModule.ID + "_" + cfgName.ID,
 						cfgStat.ID + "_" + cfgStat.Suffix),
-						cfgStat.Help, []string{"inst"}, nil, )
+						cfgStat.Help, []string{label}, nil, )
 				stat.desc = typedDesc{ desc, prometheus.CounterValue }
 				stat.scaleFactor = cfgStat.ScaleFactor
 				name.stats = append(name.stats, stat)

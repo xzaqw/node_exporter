@@ -26,6 +26,7 @@ type KstatStat struct {
 	Type        string      `json:"type"`
 	Help        string `json:"help"`
 	ScaleFactor float64      `json:"scale_factor"`
+	LabelString string `json:"label_string"`
 }
 
 var kstatConfigInstance = kstatConfig {
@@ -42,6 +43,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "bread",
@@ -49,6 +51,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "dtrace_probes",
@@ -56,6 +59,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "intr",
@@ -63,6 +67,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "intrblk",
@@ -70,6 +75,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "intrthread",
@@ -77,6 +83,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "lread",
@@ -84,6 +91,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "lwrite",
@@ -91,6 +99,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "modload",
@@ -98,6 +107,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "cpu_ticks_idle",
@@ -105,6 +115,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "Ticks the CPU spent in idle mode",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "cpu_ticks_kernel",
@@ -112,6 +123,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "Ticks the CPU spent in kernel mode",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "cpu_ticks_user",
@@ -119,6 +131,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "Ticks the CPU spent in user mode",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "cpu_ticks_wait",
@@ -126,6 +139,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "Ticks the CPU spent in wait  mode",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "cpu_nsec_dtrace",
@@ -133,6 +147,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "Seconds the CPU spent in dtrace mode",
 						ScaleFactor: 1e-9,
+						LabelString: "cpu",
 						},
 						{
 						ID: "cpu_nsec_idle",
@@ -140,6 +155,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "Seconds the CPU spent in idle mode",
 						ScaleFactor: 1e-9,
+						LabelString: "cpu",
 						},
 						{
 						ID: "cpu_nsec_intr",
@@ -147,6 +163,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "Seconds the CPU spent in interrupt mode",
 						ScaleFactor: 1e-9,
+						LabelString: "cpu",
 						},
 						{
 						ID: "cpu_nsec_kernel",
@@ -154,6 +171,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "Seconds the CPU spent in kernel mode",
 						ScaleFactor: 1e-9,
+						LabelString: "cpu",
 						},
 						{
 						ID: "cpu_nsec_user",
@@ -161,6 +179,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "Seconds the CPU spent in user mode",
 						ScaleFactor: 1e-9,
+						LabelString: "cpu",
 						},
 						{
 						ID: "cpu_load_intr",
@@ -168,6 +187,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "cpumigrate",
@@ -175,6 +195,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "iowait",
@@ -182,6 +203,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "nthreads",
@@ -189,6 +211,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "syscall",
@@ -196,6 +219,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "sysexec",
@@ -203,6 +227,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "sysfork",
@@ -210,6 +235,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "sysread",
@@ -217,6 +243,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "sysvfork",
@@ -224,6 +251,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "syswrite",
@@ -231,6 +259,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "trap",
@@ -238,6 +267,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "idlethread",
@@ -245,6 +275,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "inv_swtch",
@@ -252,6 +283,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "mutex_adenters",
@@ -259,6 +291,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 						{
 						ID: "xcalls",
@@ -266,6 +299,7 @@ var kstatConfigInstance = kstatConfig {
 						Type: "counter",
 						Help: "",
 						ScaleFactor: 1,
+						LabelString: "cpu",
 						},
 					},
 				},
