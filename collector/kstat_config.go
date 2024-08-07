@@ -388,7 +388,7 @@ var kstatConfigInstance = kstatConfig {
 						ID: "ncpus",
 						Suffix: "total",
 						Type: "counter",
-						Help: "1 min CPU load average",
+						Help: "Number of CPUs presented",
 						ScaleFactor: 1,
 						},
                         		},
