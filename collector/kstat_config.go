@@ -358,6 +358,20 @@ var kstatConfigInstance = kstatConfig {
 						Help: "",
 						ScaleFactor: 1,
 						},
+						{
+						ID: "freemem",
+						Suffix: "total",
+						Type: "counter",
+						Help: "",
+						ScaleFactor: 1,
+						},
+						{
+						ID: "availrmem",
+						Suffix: "total",
+						Type: "counter",
+						Help: "",
+						ScaleFactor: 1,
+						},
 					},
 				},
                         	{ 
@@ -487,13 +501,6 @@ var kstatConfigInstance = kstatConfig {
 						},
 						{
 						ID: "compressed_size",
-						Suffix: "total",
-						Type: "counter",
-						Help: "",
-						ScaleFactor: 1,
-						},
-						{
-						ID: "crtime",
 						Suffix: "total",
 						Type: "counter",
 						Help: "",
