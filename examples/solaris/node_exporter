@@ -1,7 +1,5 @@
 #!/sbin/sh
 
-# Start/stop client SAS MetaData service
-#
 . /lib/svc/share/smf_include.sh
 
 /opt/local/bin/node_exporter

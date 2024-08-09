@@ -1,7 +1,5 @@
 #!/sbin/sh
 
-# Start/stop client SAS MetaData service
-#
 . /lib/svc/share/smf_include.sh
 
 /opt/argo/bin/prometheus/node_exporter/node_exporter --path.kstatcfg=/opt/argo/etc/kstat_config.yml
