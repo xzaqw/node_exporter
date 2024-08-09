@@ -18,248 +18,90 @@ kstat_modules:
   - id: cpu
     kstat_names:
       - id: sys
+        label_string: cpu
         kstat_stats:
 
           - id: bawrite
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: bread
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 
-
           - id: dtrace_probes
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: intr
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: intrblk
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: intrthread
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: lread
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: lwrite
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: modload
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
 
           - id: cpu_ticks_idle
-            suffix: total
-            type: counter
             help: Ticks the CPU spent in idle mode
-            scale_factor: 1
 
           - id: cpu_ticks_kernel
-            suffix: total
-            type: counter
             help: Ticks the CPU spent in kernel mode
             scale_factor: 1
 
           - id: cpu_ticks_user
-            suffix: total
-            type: counter
             help: Ticks the CPU spent in user mode
-            scale_factor: 1
 
           - id: cpu_ticks_wait
-            suffix: total
-            type: counter
             help: Ticks the CPU spent in wait  mode
-            scale_factor: 1
 
           - id: cpu_nsec_dtrace
             suffix: seconds_total
-            type: counter
             help: Seconds the CPU spent in dtrace mode
             scale_factor: 1e-9
 
           - id: cpu_nsec_idle
             suffix: seconds_total
-            type: counter
             help: Seconds the CPU spent in idle mode
             scale_factor: 1e-9
 
           - id: cpu_nsec_intr
             suffix: seconds_total
-            type: counter
             help: Seconds the CPU spent in interrupt mode
             scale_factor: 1e-9
 
           - id: cpu_nsec_kernel
             suffix: seconds_total
-            type: counter
             help: Seconds the CPU spent in kernel mode
             scale_factor: 1e-9
 
           - id: cpu_nsec_user
             suffix: seconds_total
-            type: counter
             help: Seconds the CPU spent in user mode
             scale_factor: 1e-9
 
           - id: cpu_load_intr
             suffix: percents
-            type: counter
-            help: 
-            scale_factor: 1
 
           - id: cpumigrate
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: iowait
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: nthreads
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: syscall
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: sysexec
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: sysfork
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: sysread
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: sysvfork
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: syswrite
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: trap
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: idlethread
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: inv_swtch
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: mutex_adenters
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: xcalls
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
 
       - id: vm
         kstat_stats:
           - id: pgswapin
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: pgswapout
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
 
   - id: unix
     kstat_names:
       - id: system_pages
         kstat_stats:
-
           - id: pagesfree
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: pageslocked
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: pagestotal
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
-
           - id: physmem
-            suffix: total
-            type: counter
-            help: 
-            scale_factor: 1
+          - id: freemem
+          - id: availrmem
 
 
       - id: pset
@@ -267,18 +109,127 @@ kstat_modules:
 
           - id: avenrun_15min
             suffix: percents
-            type: counter
             help: 15 min CPU load average
-            scale_factor: 1
 
           - id: avenrun_5min
             suffix: percents
-            type: counter
             help: 5 min CPU load average
-            scale_factor: 1
 
           - id: avenrun_1min
             suffix: percents
-            type: counter
             help: 1 min CPU load average
-            scale_factor: 1
+  - id: zfs
+    kstat_names:
+      - id: arcstats
+        kstat_stats:
+          - id:  access_skip
+          - id:  anon_evictable_data
+          - id:  anon_evictable_metadata
+          - id:  anon_size
+          - id:  arc_meta_limit
+          - id:  arc_meta_max
+          - id:  arc_meta_min
+          - id:  arc_meta_used
+          - id:  async_upgrade_sync
+          - id:  c
+          - id:  c_max
+          - id:  c_min
+          - id:  compressed_size
+          - id:  data_size
+          - id:  deleted
+          - id:  demand_data_hits
+          - id:  demand_data_misses
+          - id:  demand_hit_predictive_prefetch
+          - id:  demand_hit_prescient_prefetch
+          - id:  demand_metadata_hits
+          - id:  demand_metadata_misses
+          - id:  evict_l2_cached
+          - id:  evict_l2_eligible
+          - id:  evict_l2_eligible_mfu
+          - id:  evict_l2_eligible_mru
+          - id:  evict_l2_ineligible
+          - id:  evict_l2_skip
+          - id:  evict_not_enough
+          - id:  evict_skip
+          - id:  hash_chain_max
+          - id:  hash_chains
+          - id:  hash_collisions
+          - id:  hash_elements
+          - id:  hash_elements_max
+          - id:  hdr_size
+          - id:  hits
+          - id:  l2_abort_lowmem
+          - id:  l2_asize
+          - id:  l2_bufc_data_asize
+          - id:  l2_bufc_metadata_asize
+          - id:  l2_cksum_bad
+          - id:  l2_data_to_meta_ratio
+          - id:  l2_evict_l1cached
+          - id:  l2_evict_lock_retry
+          - id:  l2_evict_reading
+          - id:  l2_feeds
+          - id:  l2_free_on_write
+          - id:  l2_hdr_size
+          - id:  l2_hits
+          - id:  l2_io_error
+          - id:  l2_log_blk_asize
+          - id:  l2_log_blk_avg_asize
+          - id:  l2_log_blk_count
+          - id:  l2_log_blk_writes
+          - id:  l2_mfu_asize
+          - id:  l2_misses
+          - id:  l2_mru_asize
+          - id:  l2_prefetch_asize
+          - id:  l2_read_bytes
+          - id:  l2_rebuild_asize
+          - id:  l2_rebuild_bufs
+          - id:  l2_rebuild_bufs_precached
+          - id:  l2_rebuild_cksum_lb_errors
+          - id:  l2_rebuild_dh_errors
+          - id:  l2_rebuild_io_errors
+          - id:  l2_rebuild_log_blks
+          - id:  l2_rebuild_lowmem
+          - id:  l2_rebuild_size
+          - id:  l2_rebuild_success
+          - id:  l2_rebuild_unsupported
+          - id:  l2_rw_clash
+          - id:  l2_size
+          - id:  l2_write_bytes
+          - id:  l2_writes_done
+          - id:  l2_writes_error
+          - id:  l2_writes_lock_retry
+          - id:  l2_writes_sent
+          - id:  memory_throttle_count
+          - id:  metadata_size
+          - id:  mfu_evictable_data
+          - id:  mfu_evictable_metadata
+          - id:  mfu_ghost_evictable_data
+          - id:  mfu_ghost_evictable_metadata
+          - id:  mfu_ghost_hits
+          - id:  mfu_ghost_size
+          - id:  mfu_hits
+          - id:  mfu_size
+          - id:  misses
+          - id:  mru_evictable_data
+          - id:  mru_evictable_metadata
+          - id:  mru_ghost_evictable_data
+          - id:  mru_ghost_evictable_metadata
+          - id:  mru_ghost_hits
+          - id:  mru_ghost_size
+          - id:  mru_hits
+          - id:  mru_size
+          - id:  mutex_miss
+          - id:  other_size
+          - id:  overhead_size
+          - id:  p
+          - id:  prefetch_data_hits
+          - id:  prefetch_data_misses
+          - id:  prefetch_metadata_hits
+          - id:  prefetch_metadata_misses
+          - id:  size
+          - id:  snaptime
+          - id:  uncompressed_size 
+
+
+
+
