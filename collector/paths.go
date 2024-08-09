@@ -27,6 +27,7 @@ var (
 	sysPath      = kingpin.Flag("path.sysfs", "sysfs mountpoint.").Default("/sys").String()
 	rootfsPath   = kingpin.Flag("path.rootfs", "rootfs mountpoint.").Default("/").String()
 	udevDataPath = kingpin.Flag("path.udev.data", "udev data path.").Default("/run/udev/data").String()
+	kstatCfgPath = kingpin.Flag("path.kstatcfg", "kstat config path.").Default("/usr/local/etc/kstat_config.yml").String()
 )
 
 func procFilePath(name string) string {
@@ -54,4 +55,8 @@ func rootfsStripPrefix(path string) string {
 		return "/"
 	}
 	return stripped
+}
+
+func kstatCfgFilePath() string {
+	return *kstatCfgPath
 }

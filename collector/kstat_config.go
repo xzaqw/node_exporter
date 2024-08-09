@@ -36,7 +36,7 @@ func (cfg *kstatConfig) init() error {
 		cfgFile kstatConfig
 	)
 
-	yamlFile, err := ioutil.ReadFile(CONFIG_PATH)
+	yamlFile, err := ioutil.ReadFile(kstatCfgFilePath("kstat_config.yml"))
 
 
 	if err != nil { return err }
