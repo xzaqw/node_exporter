@@ -5,10 +5,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const (
-	CONFIG_PATH = "/var/opt/node_exporter/config/kstat_config.yml"
-)
-
 type kstatConfig struct {
 	KstatModules [] KstatModule `yaml:"kstat_modules"`
 }

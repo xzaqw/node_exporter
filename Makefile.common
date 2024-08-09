@@ -208,6 +208,11 @@ common-tarball: promu
 	@echo ">> building release tarball"
 	$(PROMU) tarball --prefix $(PREFIX) $(BIN_DIR)
 
+.PHONY: common-install
+common-install: 
+	NODE_CONFIG_DIR=$(CONFIG_DIR) NODE_BIN_DIR=$(INSTALL_DIR) \
+			$(MAKE) -C os/$(GOHOSTOS)
+
 .PHONY: common-docker-repo-name
 common-docker-repo-name:
 	@echo "$(DOCKER_REPO)/$(DOCKER_IMAGE_NAME)"
