@@ -4,4 +4,4 @@
 #
 . /lib/svc/share/smf_include.sh
 
-/opt/local/bin/node_exporter
+/opt/argo/bin/prometheus/node_exporter/node_exporter --path.kstatcfg=/opt/argo/etc/kstat_config.yml
