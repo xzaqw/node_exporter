@@ -1,18 +1,51 @@
 ---
-#node_kstat_cpu_sys_ticks_kernel_total
-#kstat_modules[].id: kstat module string
-#kstat_modules[].kstat_names: array of module representations
-#kstat_modules[]kstat_names[].id kstat name string
-#kstat_modules[]kstat_names[].kstat_stats: array of statistics representations
-#kstat_modules[]kstat_names[].kstat_stats[].id: kstat statistic representation
-#kstat_modules[]kstat_names[].kstat_stats[].suffix: metric suffix 
-#       to be providedin the end of metric name.
-#       NOTE: the final metric name would provided in the following way:
-#         node_kstat_<kstat_module>_<kstat_name>_<kstat_statistic>_<suffix>
-#kstat_modules[]kstat_names[].kstat_stats[].type: metric type (counter/gauge)
-#kstat_modules[]kstat_names[].kstat_stats[].help: metric help
-#kstat_modules[]kstat_names[].kstat_stats[].scale_factor: number the metric value to be 
-#         multiplied with before the final representation 
+#[mandatory] kstat_modules: Array of kstat module definitions
+#[mandatory] kstat_modules[].id: kstat module string
+#[mandatory] kstat_modules[].kstat_names: Array of kstat name definitions
+#[mandatory] kstat_modules[].kstat_names[].id: kstat name string
+#[optional]  kstat_modules[].kstat_names[].label_string: string to be used
+#            as the metric label. Default value: instance 
+#[mandatory] kstat_modules[].kstat_names[].kstat_stats: Array of kstat statistic
+#            definitions
+#[mandatory] kstat_modules[].kstat_names[].kstat_stats[].id: kstat statistic string
+#[optional]  kstat_modules[].kstat_names[].kstat_stats[].suffix: string to be added 
+#            as the metric suffix. Default value: total
+#[optional]  kstat_modules[].kstat_names[].kstat_stats[].help: string to be used as the
+#            metric help
+#[optional]  kstat_modules[].kstat_names[].kstat_stats[].scale_factor: number the metric 
+#            value to be multiplied with before the final representation 
+
+#Example:
+#
+#kstat_modules:
+#  - id: cpu
+#    kstat_names:
+#      - id: sys
+#        label_string: cpu
+#        kstat_stats:
+#          - id: bawrite
+#          - id: modload
+#          - id: cpu_ticks_idle
+#            help: Ticks the CPU spent in idle mode
+#          - id: cpu_ticks_kernel
+#            help: Ticks the CPU spent in kernel mode
+#            scale_factor: 1
+#          - id: cpu_nsec_dtrace
+#            suffix: seconds_total
+#            help: Seconds the CPU spent in dtrace mode
+#            scale_factor: 1e-9
+#  - id: unix
+#    kstat_names:
+#      - id: system_pages
+#        kstat_stats:
+#          - id: pagesfree
+#          - id: freemem
+#          - id: availrmem
+#      - id: pset
+#        kstat_stats:
+#          - id: avenrun_15min
+#            suffix: percents
+#            help: 15 min CPU load average
 
 kstat_modules:
   - id: cpu
