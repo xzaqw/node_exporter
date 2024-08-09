@@ -142,6 +142,9 @@ test-docker:
 .PHONY: promtool
 promtool: $(PROMTOOL)
 
+install:
+	$(MAKE) -C os
+
 $(PROMTOOL):
 	mkdir -p $(FIRST_GOPATH)/bin
 	curl -fsS -L $(PROMTOOL_URL) | tar -xvzf - -C $(FIRST_GOPATH)/bin --strip 1 "prometheus-$(PROMTOOL_VERSION).$(GO_BUILD_PLATFORM)/promtool"
