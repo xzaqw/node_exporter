@@ -1,5 +1,0 @@
-#!/sbin/sh
-
-. /lib/svc/share/smf_include.sh
-
-/opt/local/bin/node_exporter
