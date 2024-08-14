@@ -136,10 +136,17 @@ kstat_modules:
           - id: freemem
           - id: availrmem
 
+      - id: vminfo
+        kstat_stats:
+          - id: freemem
+          - id: swap_alloc
+          - id: swap_avail
+          - id: swap_free
+          - id: swap_resv
+          - id: updates
 
       - id: pset
         kstat_stats:
-
           - id: avenrun_15min
             suffix: percents
             help: 15 min CPU load average
@@ -151,6 +158,7 @@ kstat_modules:
           - id: avenrun_1min
             suffix: percents
             help: 1 min CPU load average
+
   - id: zfs
     kstat_names:
       - id: arcstats

@@ -1,6 +1,7 @@
 package collector
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 	"github.com/go-kit/log"
@@ -87,13 +88,21 @@ func NewKstatCollector(logger log.Logger) (Collector, error) {
 	return &c, nil
 }
 
+func (c *kstatCollector) throwError(module string, name string, stat string, inst int, err error) {
+	level.Error(c.logger).Log(module + ":" + strconv.Itoa(inst) + ":" + name + ":" + stat, err)
+}
+
 func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
-	var (	kstatValue *kstat.Named
-		err error
+	var (	tok	*kstat.Token
+		ks	*kstat.KStat
+		named	*kstat.Named
+		vminfo	*kstat.Vminfo
+		err	error
 		metricValue float64
+		vminfoDict map[string]uint64
 	)
 
-	tok, err := kstat.Open()
+	tok, err = kstat.Open()
 	if err != nil { 
 		return err 
 	}
@@ -102,6 +111,30 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 
 	for _,module := range c.modules {
 		for _,name := range module.names {
+			//Workaround for non-named kstats
+			if module.ID == "unix" && name.ID == "vminfo" {
+				ks, vminfo, err = tok.Vminfo()
+				ks = ks
+				if err != nil {
+					c.throwError(module.ID, name.ID, "", 0, err)
+					break
+				}
+
+				vminfoDict = map[string]uint64 {
+					"freemem":	vminfo.Freemem,
+					"swap_alloc":	vminfo.Alloc,
+					"swap_avail":	vminfo.Avail,
+					"swap_free":	vminfo.Free,
+					"swap_resv":	vminfo.Resv,
+					"updates":	vminfo.Updates,
+				}
+
+				for _, stat := range name.stats {
+					ch <- stat.desc.mustNewConstMetric(
+						float64(vminfoDict[stat.ID]) * stat.scaleFactor, "0")
+				}
+				continue
+			}
 			inst := 0
 			for {
 				ksName, err := tok.Lookup(module.ID, inst, name.ID)
@@ -113,13 +146,12 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 					if strings.HasSuffix(stat.ID, "snaptime") {
 						metricValue = float64(ksName.Snaptime)
 					} else {
-						kstatValue, err = ksName.GetNamed(stat.ID)
+						named, err = ksName.GetNamed(stat.ID)
 						if (err != nil) {
-							level.Error(c.logger).Log(module.ID + ":" + 
-							strconv.Itoa(inst) + ":" + name.ID + ":" + stat.ID, err)
+							c.throwError(module.ID, name.ID, stat.ID, inst, err)
 							continue
 						}
-						metricValue = float64(kstatValue.UintVal) * stat.scaleFactor
+						metricValue = float64(named.UintVal) * stat.scaleFactor
 					}
 
 					//Round the value down to the number integer value 
@@ -128,7 +160,7 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 					ch <- stat.desc.mustNewConstMetric(float64(int(metricValue)), 
 						strconv.Itoa(inst))
 				}
-				inst++	
+				inst++
 			}
 		}
 	}
