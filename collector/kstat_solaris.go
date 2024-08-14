@@ -1,7 +1,7 @@
 package collector
 
 import (
-	"fmt"
+//	"fmt"
 	"strconv"
 	"strings"
 	"github.com/go-kit/log"
