@@ -2,4 +2,58 @@
 
 . /lib/svc/share/smf_include.sh
 
-/opt/argo/bin/prometheus/node_exporter/node_exporter --path.kstatcfg=/opt/argo/etc/kstat_config.yml
+getproparg() {
+	val=`svcprop -p $1 $SMF_FMRI`
+	[ -n "$val" ] && echo $val
+}
+
+EXEC_FILE=`getproparg node_exporter/executable`
+CFG_FILE=`getproparg node_exporter/config`
+PID_FILE=`getproparg node_exporter/pid`
+
+OPTIONS="--path.kstatcfg=${CFG_FILE}"
+
+if [ -z $SMF_FMRI ]; then
+	echo "SMF framework variables are not initialized."
+	exit $SMF_EXIT_ERR
+fi
+
+if [ -z $CFG_FILE ]; then
+	echo "node_exporter/config property is not set"
+	exit $SMF_EXIT_ERR_CONFIG
+fi
+
+if [ -z $PID_FILE ]; then
+	echo "node_exporter/pid property is not set"
+	exit $SMF_EXIT_ERR_CONFIG
+fi
+
+if [ ! -f ${CFG_FILE} ]; then
+	echo "node_exporter/config: could not find config file"
+	exit $SMF_EXIT_ERR_CONFIG
+fi
+
+case "$1" in
+start)
+	$EXEC_FILE $OPTIONS
+        if [ $? -ne 0 ]; then
+		exit $SMF_EXIT_ERR_CONFIG
+        fi
+        ;;
+refresh)
+        if [ -f "$PID_FILE" ]; then
+                /usr/bin/kill -HUP `/usr/bin/cat $PID_FILE`
+        fi
+        ;;
+stop)
+        if [ -f "$PID_FILE" ]; then
+                /usr/bin/kill -KILL `/usr/bin/cat $PID_FILE`
+        fi
+        ;;
+*)
+        echo "Usage: $0 {start|stop|refresh}"
+        exit 1
+        ;;
+esac
+
+exit $SMF_EXIT_OK
