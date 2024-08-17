@@ -2,12 +2,17 @@ BIN_DIR ?= /usr/local/bin
 CFG_DIR ?= /etc
 SVC_DIR ?= /lib/svc/method
 
+BIN_PATH := $(BIN_DIR)/prometheus-node-exporter
+MANIFEST_PATH := $(SVC_DIR)/node_exporter.xml
+SMF_METHOD_PATH := $(SVC_DIR)/method/node_exporter
+KSTAT_CONFIG_PATH := $(CFG_DIR)/kstat_config.yml 
+
 all:
 	@mkdir -p $(CFG_DIR)
 	@mkdir -p $(BIN_DIR)
-	@mkdir -p $(SVC_DIR)
-	@cp ./kstat_config.yml $(CFG_DIR)
-	@cp ../../node_exporter $(BIN_DIR)/prometheus-node-exporter
-	@cp ./node_exporter $(SVC_DIR)
-	@cp ./node_exporter.xml $(SVC_DIR)
-	sudo svccfg -v import $(SVC_DIR)/node_exporter.xml
+	@mkdir -p $(SVC_DIR)/method
+	@cp ./kstat_config.yml $(KSTAT_CONFIG_PATH)
+	@cp ../../node_exporter $(BIN_PATH)
+	@cp ./node_exporter $(SMF_METHOD_PATH)
+	@cp ./node_exporter.xml $(MANIFEST_PATH)
+	sudo svccfg -v import $(MANIFEST_PATH)
