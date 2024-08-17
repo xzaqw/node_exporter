@@ -7,7 +7,7 @@
 package collector
 
 import (
-//	"fmt"
+	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -406,6 +406,9 @@ func (e *GZZpoolListCollector) parseZpoolGetOutput(out string) error {
 		parsed_line := strings.Fields(line)
 		pool_name := parsed_line[0]
 		val := parsed_line[2]
+
+		//Filter out the lines with value presented as "-"
+		if val == "-" { continue }
 
 		switch parsed_line[1] {
 		case "size":
