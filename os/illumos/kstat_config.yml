@@ -260,7 +260,6 @@ kstat_modules:
           - id:  mru_hits
           - id:  mru_size
           - id:  mutex_miss
-          - id:  other_size
           - id:  overhead_size
           - id:  p
           - id:  prefetch_data_hits
