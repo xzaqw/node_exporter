@@ -7,7 +7,7 @@
 package collector
 
 import (
-	"fmt"
+//	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
