@@ -7,6 +7,7 @@ all:
 	@mkdir -p $(BIN_DIR)
 	@mkdir -p $(SVC_DIR)
 	@cp ./kstat_config.yml $(CFG_DIR)
-	@cp ../../node_exporter $(BIN_DIR)
+	@cp ../../node_exporter $(BIN_DIR)/prometheus-node-exporter
 	@cp ./node_exporter $(SVC_DIR)
-	sudo svccfg -v import node_exporter.xml
+	@cp ./node_exporter.xml $(SVC_DIR)
+	sudo svccfg -v import $(SVC_DIR)/node_exporter.xml

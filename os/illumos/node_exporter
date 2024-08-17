@@ -7,9 +7,9 @@ getproparg() {
 	[ -n "$val" ] && echo $val
 }
 
-EXEC_FILE=`getproparg node_exporter/executable`
-CFG_FILE=`getproparg node_exporter/config`
-PID_FILE=`getproparg node_exporter/pid`
+EXEC_FILE=`getproparg config/executable_file`
+CFG_FILE=`getproparg config/config_file`
+PID_FILE=`getproparg config/pid_file`
 
 OPTIONS="--path.kstatcfg=${CFG_FILE}"
 
