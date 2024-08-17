@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <!DOCTYPE service_bundle SYSTEM "/usr/share/lib/xml/dtd/service_bundle.dtd.1">
 
-<service_bundle type="manifest" name="node_exporter">
-	<service name="network/node_exporter" type="service" version="1">
+<service_bundle type="manifest" name="prometheus_node_exporter">
+	<service name="network/prometheus_node_exporter" type="service" version="1">
 		<create_default_instance enabled="true"/>
 		<single_instance/>
 
@@ -16,7 +16,7 @@
 		<exec_method 
 			type="method" 
 			name="start" 
-			exec="/opt/argo/svc/node_exporter %m" 
+			exec="/opt/argo/svc/method/prometheus_node_exporter %m" 
 			timeout_seconds="60">
 		</exec_method>
 
@@ -30,7 +30,7 @@
 		<exec_method
 			type='method'
 			name='refresh'
-			exec='/opt/argo/svc/node_exporter %m'
+			exec='/opt/argo/svc/method/prometheus_node_exporter %m'
 			timeout_seconds='60'>
 		</exec_method>
 
@@ -39,12 +39,11 @@
 			<!-- sub-process core dumps shouldn't restart session --> 
 			<propval name='ignore_error' type='astring' value='core,signal'/> 
 		</property_group>
-
+		
 		<property_group name="config" type="application">
-			<propval name='executable_file' type='astring' 
-				value='/opt/argo/bin/prometheus-node-exporter'/>
-			<propval name='config_file'	type='astring' value='/opt/argo/etc/kstat_config.yml'/>
-			<propval name='pid_file'	type='astring' value='/opt/argo/var/run/node_exporter.pid'/>
+			<propval name='executable_file' 	type='astring' value='/opt/argo/bin/prometheus-node-exporter'/>
+			<propval name='kstat_config_file'	type='astring' value='/opt/argo/etc/kstat_config.yml'/>
+			<propval name='pid_file'		type='astring' value='/opt/argo/var/run/prometheus_node_exporter.pid'/>
 		</property_group>
 
 		<stability value="Evolving"/>
