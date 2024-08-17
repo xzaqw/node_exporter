@@ -8,17 +8,17 @@ getproparg() {
 }
 
 EXEC_FILE=`getproparg config/executable_file`
-CFG_FILE=`getproparg config/config_file`
+KSTAT_CFG_FILE=`getproparg config/kstat_config_file`
 PID_FILE=`getproparg config/pid_file`
 
-OPTIONS="--path.kstatcfg=${CFG_FILE}"
+OPTIONS="--path.kstatcfg=${KSTAT_CFG_FILE}"
 
 if [ -z $SMF_FMRI ]; then
 	echo "SMF framework variables are not initialized."
 	exit $SMF_EXIT_ERR
 fi
 
-if [ -z $CFG_FILE ]; then
+if [ -z $KSTAT_CFG_FILE ]; then
 	echo "node_exporter/config property is not set"
 	exit $SMF_EXIT_ERR_CONFIG
 fi
@@ -28,7 +28,7 @@ if [ -z $PID_FILE ]; then
 	exit $SMF_EXIT_ERR_CONFIG
 fi
 
-if [ ! -f ${CFG_FILE} ]; then
+if [ ! -f ${KSTAT_CFG_FILE} ]; then
 	echo "node_exporter/config: could not find config file"
 	exit $SMF_EXIT_ERR_CONFIG
 fi
