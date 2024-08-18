@@ -36,7 +36,7 @@ func NewPsCollector(logger log.Logger) (Collector, error) {
 		cpuGaugeList[i] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: fmt.Sprintf("node_ps_cpu_process_%d", i),
 			Help: fmt.Sprintf("Process index %d from processes list sorted by CPU utilization.", i),
-		}, []string{"pid","zoneid","args", "lwp", "nlwp"})
+		}, []string{"pid","zoneid","args"})
 	}
 	for i := range memGaugeList {
 		memGaugeList[i] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
@@ -73,8 +73,6 @@ type psCpuLineDesc struct {
 	pid uint
 	zoneid uint
 	args string
-	lwp uint
-	nlwp uint
 }
 
 func parsePsCpuOutput(psCpuOut string) ([]psCpuLineDesc , error) {
@@ -103,25 +101,15 @@ func parsePsCpuOutput(psCpuOut string) ([]psCpuLineDesc , error) {
 		zoneid, err := strconv.ParseUint(parsed_line[2], 10, 32)
 		if err != nil { goto exit }
 
-		lwp, err := strconv.ParseUint(parsed_line[3], 10, 32)
-		if err != nil { goto exit }
-
-		nlwp, err := strconv.ParseUint(parsed_line[4], 10, 32)
-		if err != nil { goto exit }
-
 		args = ""
-		for i := range parsed_line[5:len(parsed_line)] {
-			args += parsed_line[5+i] + " "
+		for i := range parsed_line[3:len(parsed_line)] {
+			args += parsed_line[3+i] + " "
 		}
-
-		//fmt.Print(args, ":", fmt.Sprintf("%f", pcpu))
 
 		out = append(out, psCpuLineDesc {
 			pcpu: pcpu,
 			pid: uint(pid),
 			zoneid: uint(zoneid),
-			lwp: uint(lwp),
-			nlwp: uint(nlwp),
 			args: args,
 		})
 	}
@@ -138,7 +126,7 @@ func cmpPsCpu(a, b psCpuLineDesc) int {
 }
 
 func (c *PsCollector) getPsCpu() error {
-	out, eerr := exec.Command("ps", "-eo", "pcpu,pid,zoneid,lwp,nlwp,args").Output()
+	out, eerr := exec.Command("ps", "-eo", "pcpu,pid,zoneid,args").Output()
 	if eerr != nil {
 		level.Error(c.logger).Log("error on executing ps: %v", eerr)
 	} else {
@@ -155,9 +143,7 @@ func (c *PsCollector) getPsCpu() error {
 			line := psCpuParsed[outLen - 1 - i]
 			c.psCpu[i].With(prometheus.Labels{
 				"pid": 		fmt.Sprintf("%d", line.pid), 
-				"zoneid": 	fmt.Sprintf("%d", line.zoneid), 
-				"lwp": 		fmt.Sprintf("%d", line.lwp),
-				"nlwp": 	fmt.Sprintf("%d", line.nlwp),
+				"zoneid": 	fmt.Sprintf("%d", line.zoneid),
 				"args":		line.args,
 			}).Set(line.pcpu)
 		}
