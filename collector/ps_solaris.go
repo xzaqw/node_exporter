@@ -15,12 +15,17 @@ import (
 )
 
 const (
-	PROCESSES_NUM = 10
+	// The maximum threshold that we'll never reach regardless of config 
+	MAX_PROCESSES_NUM = 200
+	//TODO: move to config
+	CONFIG_PROCESSES_NUM = 15
+	CONFIG_LOW_CPU_THRESHOLD = float64(5)
+	CONFIG_LOW_MEM_THRESHOLD = float64(5)
 )
 
 type PsCollector struct {
-	psCpu [PROCESSES_NUM]*prometheus.GaugeVec
-	psMem [PROCESSES_NUM]*prometheus.GaugeVec
+	psCpu *prometheus.GaugeVec
+	psMem *prometheus.GaugeVec
 	logger	log.Logger
 }
 
@@ -29,6 +34,7 @@ type psLineDesc struct {
 	pmem float64
 	pid uint
 	zoneid uint
+	comm string
 	args string
 }
 
@@ -45,31 +51,15 @@ func init() {
 }
 
 func NewPsCollector(logger log.Logger) (Collector, error) {
-	cpuGaugeList := [PROCESSES_NUM]*prometheus.GaugeVec{}
-	memGaugeList := [PROCESSES_NUM]*prometheus.GaugeVec{}
-
-	for i := range cpuGaugeList {
-		cpuGaugeList[i] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: fmt.Sprintf("node_ps_cpu_process_%d", i),
-			Help: fmt.Sprintf("Process index %d from processes list sorted by CPU utilization.", i),
-		}, []string{
-			"pid",
-			"zoneid",
-			"args"})
-	}
-	for i := range memGaugeList {
-		memGaugeList[i] = prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: fmt.Sprintf("node_ps_cpu_process_%d", i),
-			Help: fmt.Sprintf("Process index %d from processes list sorted by memory utilization.", i),
-		}, []string{
-			"pid",
-			"zoneid",
-			"args"})
-	}
-
 	return &PsCollector {
-		psCpu: cpuGaugeList,
-		psMem: memGaugeList,
+		psCpu: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "node_ps_top_cpu_percents",
+			Help: "Process of top CPU consumption processes.",
+		}, []string{"index", "pid", "zoneid", "comm", "args"}),
+		psMem: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: "node_ps_top_mem_percents",
+			Help: "Process of top memory consumption processes.",
+		}, []string{"index", "pid", "zoneid", "comm", "args"}),
 		logger: logger,
 	}, nil
 }
@@ -77,21 +67,15 @@ func NewPsCollector(logger log.Logger) (Collector, error) {
 func (c *PsCollector) Update(ch chan<- prometheus.Metric) error {
 	c.getPsOut()
 
-	for i := range c.psCpu {
-		c.psCpu[i].Collect(ch)
-		//c.psMem[i].Collect(ch)
-	}
+	c.psCpu.Collect(ch)
+	c.psMem.Collect(ch)
 
 	return nil
 }
 
 func (c *PsCollector) Describe(ch chan<- *prometheus.Desc) {
-	for i := range c.psCpu {
-		c.psCpu[i].Describe(ch)
-	}
-	for i := range c.psMem {
-		c.psMem[i].Describe(ch)
-	}
+	c.psCpu.Describe(ch)
+	c.psMem.Describe(ch)
 }
 
 func parsePsOutput(psOut string) ([]psLineDesc , error) {
@@ -123,9 +107,11 @@ func parsePsOutput(psOut string) ([]psLineDesc , error) {
 		zoneid, err := strconv.ParseUint(parsed_line[3], 10, 32)
 		if err != nil { goto exit }
 
+		comm := parsed_line[4]
+
 		args = ""
-		for i := range parsed_line[4:len(parsed_line)] {
-			args += parsed_line[4+i] + " "
+		for i := range parsed_line[5:len(parsed_line)] {
+			args += parsed_line[5+i] + " "
 		}
 
 		out = append(out, psLineDesc {
@@ -133,6 +119,7 @@ func parsePsOutput(psOut string) ([]psLineDesc , error) {
 			pmem: pmem,
 			pid: uint(pid),
 			zoneid: uint(zoneid),
+			comm: comm,
 			args: args,
 		})
 	}
@@ -144,10 +131,8 @@ exit:
 	return out, nil
 }
 
-//[from Gatherer #2] collected metric node_ps_cpu_process_9 label:{name:\"args\"  value:\"/usr/sbin/sshd -R \"}  label:{name:\"pid\"  value:\"2019\"}  label:{name:\"zoneid\"  value:\"0\"}  gauge:{value:0} has help \"Process index 9 from processes list sorted by memory utilization.\" but should have \"Process index 9 from processes list sorted by CPU utilization.\""
-
 func (c *PsCollector) getPsOut() error {
-	out, eerr := exec.Command("ps", "-eo", "pcpu,pmem,pid,zoneid,args").Output()
+	out, eerr := exec.Command("ps", "-eo", "pcpu,pmem,pid,zoneid,comm,args").Output()
 	if eerr != nil {
 		level.Error(c.logger).Log("error on executing ps: %v", eerr)
 	} else {
@@ -158,27 +143,42 @@ func (c *PsCollector) getPsOut() error {
 
 		psCpuOutput := psOutputParsed
 		psMemOutput := psOutputParsed
-		psLen := len(psOutputParsed)
+		psLen := min(len(psOutputParsed), MAX_PROCESSES_NUM, CONFIG_PROCESSES_NUM)
 
 		slices.SortFunc(psCpuOutput, cmpPsCpu)
 		slices.SortFunc(psMemOutput, cmpPsMem)
 
-		for i := 0; (i < len(c.psCpu)) && (i < psLen); i++ {
-			line := psCpuOutput [psLen - 1 - i]
-			c.psCpu[i].With(prometheus.Labels{
-				"pid": 		fmt.Sprintf("%d", line.pid), 
-				"zoneid": 	fmt.Sprintf("%d", line.zoneid),
-				"args":		line.args,
-			}).Set(line.pcpu)
+		//We must only leave the `psLen` right items
+		psCpuOutput = psCpuOutput[len(psOutputParsed) - psLen : len(psOutputParsed)]
+		psMemOutput = psMemOutput[len(psOutputParsed) - psLen : len(psOutputParsed)]
+
+		c.psCpu.Reset()
+		c.psMem.Reset()
+
+		index := 0
+		for _,l:= range psCpuOutput {
+			if l.pcpu < CONFIG_LOW_CPU_THRESHOLD { continue }
+			c.psCpu.With(prometheus.Labels{
+				"index":	fmt.Sprintf("%d", index),
+				"pid": 		fmt.Sprintf("%d", l.pid), 
+				"zoneid": 	fmt.Sprintf("%d", l.zoneid),
+				"comm":		l.comm,
+				"args":		l.args,
+			}).Set(l.pcpu)
+			index++
 		}
 
-		for i := 0; (i < len(c.psMem)) && (i < psLen); i++ {
-			line := psMemOutput [psLen - 1 - i]
-			c.psMem[i].With(prometheus.Labels{
-				"pid": 		fmt.Sprintf("%d", line.pid), 
-				"zoneid": 	fmt.Sprintf("%d", line.zoneid),
-				"args":		line.args,
-			}).Set(line.pmem)
+		index = 0
+		for _,l:= range psMemOutput {
+			if l.pcpu < CONFIG_LOW_MEM_THRESHOLD { continue }
+			c.psMem.With(prometheus.Labels{
+				"index":	fmt.Sprintf("%d", index),
+				"pid": 		fmt.Sprintf("%d", l.pid), 
+				"zoneid": 	fmt.Sprintf("%d", l.zoneid),
+				"comm":		l.comm,
+				"args":		l.args,
+			}).Set(l.pmem)
+			index++
 		}
 	}
 	return nil
