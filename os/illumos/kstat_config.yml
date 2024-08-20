@@ -125,6 +125,38 @@ kstat_modules:
           - id: pgswapin
           - id: pgswapout
 
+      - id: intrstat
+        kstat_stats: 
+          - id: level-1-count
+          - id: level-1-time
+          - id: level-10-count
+          - id: level-10-time
+          - id: level-11-count
+          - id: level-11-time
+          - id: level-12-count
+          - id: level-12-time
+          - id: level-13-count
+          - id: level-13-time
+          - id: level-14-count
+          - id: level-14-time
+          - id: level-15-count
+          - id: level-15-time
+          - id: level-2-count
+          - id: level-2-time
+          - id: level-3-count
+          - id: level-3-time
+          - id: level-4-count
+          - id: level-4-time
+          - id: level-5-count
+          - id: level-5-time
+          - id: level-6-count
+          - id: level-6-time
+          - id: level-7-count
+          - id: level-7-time
+          - id: level-8-count
+          - id: level-8-time
+          - id: level-9-count
+          - id: level-9-time
   - id: unix
     kstat_names:
       - id: system_pages

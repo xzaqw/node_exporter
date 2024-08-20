@@ -57,8 +57,9 @@ func NewKstatCollector(logger log.Logger) (Collector, error) {
 				desc := prometheus.NewDesc(
 					prometheus.BuildFQName(
 						namespace, 
-						"kstat_" + cfgModule.ID + "_" + cfgName.ID,
-						cfgStat.ID + "_" + cfgStat.Suffix),
+						"kstat_" + strings.ReplaceAll(cfgModule.ID, "-", "_") + "_" + 
+						strings.ReplaceAll(cfgName.ID, "-", "_"),
+						strings.ReplaceAll(cfgStat.ID, "-", "_") + "_" + cfgStat.Suffix),
 						cfgStat.Help, []string{cfgName.LabelString}, nil, )
 				stat.desc = typedDesc{ desc, prometheus.CounterValue }
 				stat.scaleFactor = float64(cfgStat.ScaleFactor)
