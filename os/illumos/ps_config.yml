@@ -1,0 +1,5 @@
+---
+#[mandatory] number_cpu: number of CPU metrics to send (low threshold is minimum of number of CPUs or 10)
+#[mandatory] number_mem: number of memory metrics to send (low threshold is minimum of number of CPUs or 10)
+number_cpu: 10
+number_mem: 10
