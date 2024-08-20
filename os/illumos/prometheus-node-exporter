@@ -9,9 +9,10 @@ getproparg() {
 
 EXEC_FILE=`getproparg config/executable_file`
 KSTAT_CFG_FILE=`getproparg config/kstat_config_file`
+PS_CFG_FILE=`getproparg config/ps_config_file`
 PID_FILE=`getproparg config/pid_file`
 
-OPTIONS="--path.kstatcfg=${KSTAT_CFG_FILE}"
+OPTIONS="--path.kstatcfg=${KSTAT_CFG_FILE} --path.pscfg=${PS_CFG_FILE}"
 
 if [ -z $SMF_FMRI ]; then
 	echo "SMF framework variables are not initialized."
@@ -23,6 +24,11 @@ if [ -z $KSTAT_CFG_FILE ]; then
 	exit $SMF_EXIT_ERR_CONFIG
 fi
 
+if [ -z $PS_CFG_FILE ]; then
+	echo "config/ps_config_file property is not set"
+	exit $SMF_EXIT_ERR_CONFIG
+fi
+
 if [ -z $PID_FILE ]; then
 	echo "config/pid_file property is not set"
 	exit $SMF_EXIT_ERR_CONFIG
@@ -30,6 +36,11 @@ fi
 
 if [ ! -f ${KSTAT_CFG_FILE} ]; then
 	echo "config/kstat_config_file: could not find config file"
+	exit $SMF_EXIT_ERR_CONFIG
+fi
+
+if [ ! -f ${PS_CFG_FILE} ]; then
+	echo "config/ps_config_file: could not find config file"
 	exit $SMF_EXIT_ERR_CONFIG
 fi
 

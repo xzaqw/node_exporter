@@ -43,6 +43,7 @@
 		<property_group name="config" type="application">
 			<propval name='executable_file' 	type='astring' value='/opt/argo/bin/prometheus-node-exporter'/>
 			<propval name='kstat_config_file'	type='astring' value='/opt/argo/etc/kstat_config.yml'/>
+			<propval name='ps_config_file'		type='astring' value='/opt/argo/etc/ps_config.yml'/>
 			<propval name='pid_file'		type='astring' value='/opt/argo/var/run/prometheus-node-exporter.pid'/>
 		</property_group>
 
