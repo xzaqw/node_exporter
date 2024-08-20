@@ -10,22 +10,18 @@ import (
 	"os/exec"
 	"strings"
 	"strconv"
-	"cmp"
 	"slices"
 )
 
-const (
-	// The maximum threshold that we'll never reach regardless of config 
-	MAX_PROCESSES_NUM = 200
-	//TODO: move to config
-	CONFIG_PROCESSES_NUM = 15
-	CONFIG_LOW_CPU_THRESHOLD = float64(5)
-	CONFIG_LOW_MEM_THRESHOLD = float64(5)
-)
+// #include <unistd.h>
+import "C"
+
+const PROCESS_MIN_NUM = 10
 
 type PsCollector struct {
 	psCpu *prometheus.GaugeVec
 	psMem *prometheus.GaugeVec
+	processNum int
 	logger	log.Logger
 }
 
@@ -35,15 +31,8 @@ type psLineDesc struct {
 	pid uint
 	zoneid uint
 	comm string
+	rss float64
 	args string
-}
-
-func cmpPsCpu(a, b psLineDesc) int {
-	return cmp.Compare(a.pcpu, b.pcpu)
-}
-
-func cmpPsMem(a, b psLineDesc) int {
-	return cmp.Compare(a.pmem, b.pmem)
 }
 
 func init() {
@@ -51,15 +40,32 @@ func init() {
 }
 
 func NewPsCollector(logger log.Logger) (Collector, error) {
+	//TODO: read config
+	processNumCfg := 10
+	ncpus := C.sysconf(C._SC_NPROCESSORS_ONLN)
+	processMinNum := PROCESS_MIN_NUM
+
+	if PROCESS_MIN_NUM < ncpus {
+		processMinNum = int(ncpus)
+		level.Warn(logger).Log("msg", "Minimum number of processes is less than number of CPUS",
+		"processMinNum", processMinNum)
+	}
+
+	if processNumCfg < processMinNum {
+		level.Warn(logger).Log("msg", "Configured number of processes is less than minumum required")
+		processNumCfg = processMinNum
+	}
+
 	return &PsCollector {
 		psCpu: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: "node_ps_top_cpu_percents",
 			Help: "Process of top CPU consumption processes.",
 		}, []string{"index", "pid", "zoneid", "comm", "args"}),
 		psMem: prometheus.NewGaugeVec(prometheus.GaugeOpts{
-			Name: "node_ps_top_mem_percents",
+			Name: "node_ps_top_mem_kilobytes",
 			Help: "Process of top memory consumption processes.",
 		}, []string{"index", "pid", "zoneid", "comm", "args"}),
+		processNum:  processNumCfg,
 		logger: logger,
 	}, nil
 }
@@ -109,9 +115,12 @@ func parsePsOutput(psOut string) ([]psLineDesc , error) {
 
 		comm := parsed_line[4]
 
+		rss, err := strconv.ParseFloat(parsed_line[5], 64)
+		if err != nil { goto exit }
+
 		args = ""
-		for i := range parsed_line[5:len(parsed_line)] {
-			args += parsed_line[5+i] + " "
+		for i := range parsed_line[6:len(parsed_line)] {
+			args += parsed_line[6+i] + " "
 		}
 
 		out = append(out, psLineDesc {
@@ -120,6 +129,7 @@ func parsePsOutput(psOut string) ([]psLineDesc , error) {
 			pid: uint(pid),
 			zoneid: uint(zoneid),
 			comm: comm,
+			rss: rss,
 			args: args,
 		})
 	}
@@ -132,7 +142,7 @@ exit:
 }
 
 func (c *PsCollector) getPsOut() error {
-	out, eerr := exec.Command("ps", "-eo", "pcpu,pmem,pid,zoneid,comm,args").Output()
+	out, eerr := exec.Command("ps", "-eo", "pcpu,pmem,pid,zoneid,comm,rss,args").Output()
 	if eerr != nil {
 		level.Error(c.logger).Log("error on executing ps: %v", eerr)
 	} else {
@@ -141,44 +151,47 @@ func (c *PsCollector) getPsOut() error {
 			level.Error(c.logger).Log("error on parsing ps out: %v", perr)
 		}
 
-		psCpuOutput := psOutputParsed
-		psMemOutput := psOutputParsed
-		psLen := min(len(psOutputParsed), MAX_PROCESSES_NUM, CONFIG_PROCESSES_NUM)
+		//the selectino must not exceed the number of processes in the output
+		psLen := min(len(psOutputParsed), c.processNum)
 
-		slices.SortFunc(psCpuOutput, cmpPsCpu)
-		slices.SortFunc(psMemOutput, cmpPsMem)
+		psCpuOutput := make([]psLineDesc, len(psOutputParsed))
+		psMemOutput := make([]psLineDesc, len(psOutputParsed))
 
-		//We must only leave the `psLen` right items
-		psCpuOutput = psCpuOutput[len(psOutputParsed) - psLen : len(psOutputParsed)]
-		psMemOutput = psMemOutput[len(psOutputParsed) - psLen : len(psOutputParsed)]
+		copy(psCpuOutput, psOutputParsed)
+		copy(psMemOutput, psOutputParsed)
+
+		slices.SortFunc(psCpuOutput, 
+			func(a, b psLineDesc) int { return int(a.pcpu * 100)- int(b.pcpu *100)})
+		slices.SortFunc(psMemOutput, 
+			func(a, b psLineDesc) int { return int(a.rss) - int(b.rss)})
+
+		//We must only leave only the last psLen items
+		psCpuOutput = psCpuOutput[len(psCpuOutput) - psLen: ]
+		psMemOutput = psMemOutput[len(psOutputParsed) - psLen: ]
+
+		slices.Reverse(psCpuOutput)
 
 		c.psCpu.Reset()
 		c.psMem.Reset()
 
-		index := 0
-		for _,l:= range psCpuOutput {
-			if l.pcpu < CONFIG_LOW_CPU_THRESHOLD { continue }
+		for i,l:= range psCpuOutput {
 			c.psCpu.With(prometheus.Labels{
-				"index":	fmt.Sprintf("%d", index),
+				"index":	fmt.Sprintf("%d", i),
 				"pid": 		fmt.Sprintf("%d", l.pid), 
 				"zoneid": 	fmt.Sprintf("%d", l.zoneid),
 				"comm":		l.comm,
 				"args":		l.args,
 			}).Set(l.pcpu)
-			index++
 		}
 
-		index = 0
-		for _,l:= range psMemOutput {
-			if l.pcpu < CONFIG_LOW_MEM_THRESHOLD { continue }
+		for i,l:= range psMemOutput {
 			c.psMem.With(prometheus.Labels{
-				"index":	fmt.Sprintf("%d", index),
+				"index":	fmt.Sprintf("%d", i),
 				"pid": 		fmt.Sprintf("%d", l.pid), 
 				"zoneid": 	fmt.Sprintf("%d", l.zoneid),
 				"comm":		l.comm,
 				"args":		l.args,
-			}).Set(l.pmem)
-			index++
+			}).Set(l.rss)
 		}
 	}
 	return nil
