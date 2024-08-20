@@ -7,6 +7,8 @@ import (
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	"github.com/prometheus/client_golang/prometheus"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
 	"os/exec"
 	"strings"
 	"strconv"
@@ -21,8 +23,14 @@ const PROCESS_MIN_NUM = 10
 type PsCollector struct {
 	psCpu *prometheus.GaugeVec
 	psMem *prometheus.GaugeVec
-	processNum int
+	processNumCpu int
+	processNumMem int
 	logger	log.Logger
+}
+
+type psConfig struct {
+	NumberCpu int `yaml:"number_cpu"`
+	NumberMem int `yaml:"number_mem"`
 }
 
 type psLineDesc struct {
@@ -40,20 +48,35 @@ func init() {
 }
 
 func NewPsCollector(logger log.Logger) (Collector, error) {
-	//TODO: read config
-	processNumCfg := 10
+	var cfgFile psConfig
+	//processNumCfgCpu := 10
+	yamlFile, err := ioutil.ReadFile(psCfgFilePath())
+	if err != nil { return nil, err }
+
+	err = yaml.Unmarshal(yamlFile, &cfgFile)
+	if err != nil { return nil, err }	
+
+
+	processNumCfgMem := cfgFile.NumberMem
+	processNumCfgCpu := cfgFile.NumberCpu
+
 	ncpus := C.sysconf(C._SC_NPROCESSORS_ONLN)
 	processMinNum := PROCESS_MIN_NUM
 
 	if PROCESS_MIN_NUM < ncpus {
 		processMinNum = int(ncpus)
-		level.Warn(logger).Log("msg", "Minimum number of processes is less than number of CPUS",
+		level.Warn(logger).Log("msg", "Minimum number of processes is less than number of CPUs",
 		"processMinNum", processMinNum)
 	}
 
-	if processNumCfg < processMinNum {
-		level.Warn(logger).Log("msg", "Configured number of processes is less than minumum required")
-		processNumCfg = processMinNum
+	if processNumCfgCpu < processMinNum {
+		level.Warn(logger).Log("msg", "Configured number of CPU processes is less than minumum required")
+		processNumCfgCpu = processMinNum
+	}
+
+	if processNumCfgMem < processMinNum {
+		level.Warn(logger).Log("msg", "Configured number of memory processes is less than minumum required")
+		processNumCfgMem = processMinNum
 	}
 
 	return &PsCollector {
@@ -65,7 +88,8 @@ func NewPsCollector(logger log.Logger) (Collector, error) {
 			Name: "node_ps_top_mem_kilobytes",
 			Help: "Process of top memory consumption processes.",
 		}, []string{"index", "pid", "zoneid", "comm", "args"}),
-		processNum:  processNumCfg,
+		processNumCpu: processNumCfgCpu,
+		processNumMem: processNumCfgMem,
 		logger: logger,
 	}, nil
 }
@@ -152,7 +176,8 @@ func (c *PsCollector) getPsOut() error {
 		}
 
 		//the selectino must not exceed the number of processes in the output
-		psLen := min(len(psOutputParsed), c.processNum)
+		psLenCpu := min(len(psOutputParsed), c.processNumCpu)
+		psLenMem := min(len(psOutputParsed), c.processNumMem)
 
 		psCpuOutput := make([]psLineDesc, len(psOutputParsed))
 		psMemOutput := make([]psLineDesc, len(psOutputParsed))
@@ -166,8 +191,8 @@ func (c *PsCollector) getPsOut() error {
 			func(a, b psLineDesc) int { return int(a.rss) - int(b.rss)})
 
 		//We must only leave only the last psLen items
-		psCpuOutput = psCpuOutput[len(psCpuOutput) - psLen: ]
-		psMemOutput = psMemOutput[len(psOutputParsed) - psLen: ]
+		psCpuOutput = psCpuOutput[len(psCpuOutput) - psLenCpu: ]
+		psMemOutput = psMemOutput[len(psOutputParsed) - psLenMem: ]
 
 		slices.Reverse(psCpuOutput)
 

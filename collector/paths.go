@@ -16,7 +16,6 @@ package collector
 import (
 	"path/filepath"
 	"strings"
-
 	"github.com/alecthomas/kingpin/v2"
 	"github.com/prometheus/procfs"
 )
@@ -28,6 +27,7 @@ var (
 	rootfsPath   = kingpin.Flag("path.rootfs", "rootfs mountpoint.").Default("/").String()
 	udevDataPath = kingpin.Flag("path.udev.data", "udev data path.").Default("/run/udev/data").String()
 	kstatCfgPath = kingpin.Flag("path.kstatcfg", "kstat config path.").Default("/usr/local/etc/kstat_config.yml").String()
+	psCfgPath    = kingpin.Flag("path.pscfg", "ps config path.").Default("/usr/local/etc/kstat_config.yml").String()
 )
 
 func procFilePath(name string) string {
@@ -59,4 +59,8 @@ func rootfsStripPrefix(path string) string {
 
 func kstatCfgFilePath() string {
 	return *kstatCfgPath
+}
+
+func psCfgFilePath() string {
+	return *psCfgPath
 }
