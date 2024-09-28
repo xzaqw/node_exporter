@@ -17,4 +17,7 @@ all:
 	@cp ../../node_exporter $(BIN_PATH)
 	@cp ./prometheus-node-exporter $(SMF_METHOD_PATH)
 	@cp ./prometheus-node-exporter.xml $(MANIFEST_PATH)
+	@mkdir /export/home/noaccess
+	@chown noaccess:noaccess /export/home/noaccess
+	@chmod 755 /export/home/noaccess
 	sudo svccfg -v import $(MANIFEST_PATH)

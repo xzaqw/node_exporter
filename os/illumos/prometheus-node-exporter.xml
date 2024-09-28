@@ -18,6 +18,9 @@
 			name="start" 
 			exec="/opt/argo/svc/method/prometheus-node-exporter %m" 
 			timeout_seconds="60">
+			<method_context>
+				<method_credential user='noaccess' group='noaccess' />
+			</method_context>
 		</exec_method>
 
 		<exec_method 
@@ -25,6 +28,9 @@
 			name="stop" 
 			exec=":kill" 
 			timeout_seconds="60">
+			<method_context>
+				<method_credential user='noaccess' group='noaccess' />
+			</method_context>
 		</exec_method>
 
 		<exec_method
@@ -32,6 +38,9 @@
 			name='refresh'
 			exec='/opt/argo/svc/method/prometheus-node-exporter %m'
 			timeout_seconds='60'>
+			<method_context>
+				<method_credential user='noaccess' group='noaccess' />
+			</method_context>
 		</exec_method>
 
 		<property_group name="startd" type="framework">
