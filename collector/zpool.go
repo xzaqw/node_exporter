@@ -310,9 +310,9 @@ func (e *GZZpoolListCollector) Describe(ch chan<- *prometheus.Desc) {
 
 // Collect fetches the stats.
 func (e *GZZpoolListCollector) Update(ch chan<- prometheus.Metric) error {
-	e.zpoolGet()
-	e.zfsGet()
-	e.zpoolIostat()
+	e.zpoolGetProps()
+	e.zfsGetProps()
+	e.zpoolIostatLatenciesQueues()
 	e.gzZpoolListAlloc.Collect(ch)
 	e.gzZpoolListFrag.Collect(ch)
 	e.gzZpoolListFree.Collect(ch)
@@ -355,7 +355,7 @@ func (e *GZZpoolListCollector) Update(ch chan<- prometheus.Metric) error {
 	return nil;
 }
 
-func (e *GZZpoolListCollector) zpoolGet() error {
+func (e *GZZpoolListCollector) zpoolGetProps() error {
 	out, eerr := exec.Command("zpool", "get", "-Hp", 
 		"size,free,allocated,fragmentation,freeing,health,allocated,leaked,guid").Output()
 	if eerr != nil {
@@ -369,7 +369,7 @@ func (e *GZZpoolListCollector) zpoolGet() error {
 	return nil
 }
 
-func (e *GZZpoolListCollector) zpoolIostat() error {
+func (e *GZZpoolListCollector) zpoolIostatLatenciesQueues() error {
 	out, eerr := exec.Command("zpool", "iostat", "-plqv").Output()
 	if eerr != nil {
 		level.Error(e.logger).Log("error on executing zpool iostat: %v", eerr)
@@ -384,7 +384,7 @@ func (e *GZZpoolListCollector) zpoolIostat() error {
 
 //Yes, zfs get. Though we already have a dedicated collector for zfs,
 //but here we need to retrieve only some pool-related statistics
-func (e *GZZpoolListCollector) zfsGet() error {
+func (e *GZZpoolListCollector) zfsGetProps() error {
 	out, eerr := exec.Command("zfs", "get", "-Hp", "logicalused").Output()
 	if eerr != nil {
 		level.Error(e.logger).Log("error on executing zfs: %v", eerr)
