@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 	// Prometheus Go toolset
@@ -66,6 +67,13 @@ type GZZpoolListCollector struct {
 	gzZpoolListScrubqReadActiv	*prometheus.GaugeVec
 	gzZpoolListTrimqWritePend	*prometheus.GaugeVec
 	gzZpoolListTrimqWriteActiv	*prometheus.GaugeVec
+
+	gzZpoolIostatSyncRead		*prometheus.GaugeVec
+	gzZpoolIostatSyncWrite		*prometheus.GaugeVec
+	gzZpoolIostatAsyncRead		*prometheus.GaugeVec
+	gzZpoolIostatAsyncWrite		*prometheus.GaugeVec
+	gzZpoolIostatReadTotal		*prometheus.GaugeVec
+	gzZpoolIostatWriteTotal		*prometheus.GaugeVec
 
 	logger	log.Logger
 }
@@ -261,6 +269,36 @@ func NewGZZpoolListExporter(logger log.Logger) (Collector, error) {
 			Help: "zpool iostat .",
 		}, []string{"pool", "vdev"}),
 
+		gzZpoolIostatSyncRead: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: prometheus.BuildFQName(namespace, "zpool", "iostat_sync_read_operations_total"),
+			Help: "zpool iostat sync read operations (ind + agg)",
+    		}, []string{"req_size", "device", "timestamp"}),
+
+		gzZpoolIostatSyncWrite: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: prometheus.BuildFQName(namespace, "zpool", "iostat_sync_write_operations_total"),
+			Help: "zpool iostat sync write operations (ind + agg)",
+    		}, []string{"req_size", "device", "timestamp"}),
+
+		gzZpoolIostatAsyncRead: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: prometheus.BuildFQName(namespace, "zpool", "iostat_async_read_operations_total"),
+			Help: "zpool iostat async read operations (ind + agg)",
+    		}, []string{"req_size", "device", "timestamp"}),
+
+		gzZpoolIostatAsyncWrite: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: prometheus.BuildFQName(namespace, "zpool", "iostat_async_write_operations_total"),
+			Help: "zpool iostat async write operations (ind + agg)",
+    		}, []string{"req_size", "device", "timestamp"}),
+
+		gzZpoolIostatReadTotal: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: prometheus.BuildFQName(namespace, "zpool", "iostat_read_bytes_total"),
+			Help: "Sum of async + sync read operations. Each operation count (ind + agg) is multiplied by its related operation size.",
+    		}, []string{"device", "timestamp"}),
+
+		gzZpoolIostatWriteTotal: prometheus.NewGaugeVec(prometheus.GaugeOpts{
+			Name: prometheus.BuildFQName(namespace, "zpool", "iostat_write_bytes_total"),
+			Help: "Sum of async + sync write operations. Each operation count (ind + agg) is multiplied by its related operation size.",
+    		}, []string{"device", "timestamp"}),
+
 		logger: logger,
 
 	}, nil
@@ -306,13 +344,24 @@ func (e *GZZpoolListCollector) Describe(ch chan<- *prometheus.Desc) {
 	e.gzZpoolListScrubqReadActiv.Describe(ch)	
 	e.gzZpoolListTrimqWritePend.Describe(ch)	
 	e.gzZpoolListTrimqWriteActiv.Describe(ch)	
+
+	e.gzZpoolIostatSyncRead.Describe(ch)
+	e.gzZpoolIostatSyncWrite.Describe(ch)
+	e.gzZpoolIostatAsyncRead.Describe(ch)
+	e.gzZpoolIostatAsyncWrite.Describe(ch)
+
+	e.gzZpoolIostatReadTotal.Describe(ch)
+	e.gzZpoolIostatWriteTotal.Describe(ch)
 }
 
 // Collect fetches the stats.
 func (e *GZZpoolListCollector) Update(ch chan<- prometheus.Metric) error {
+
 	e.zpoolGetProps()
 	e.zfsGetProps()
 	e.zpoolIostatLatenciesQueues()
+	e.zpoolIostatRequestSizes()
+
 	e.gzZpoolListAlloc.Collect(ch)
 	e.gzZpoolListFrag.Collect(ch)
 	e.gzZpoolListFree.Collect(ch)
@@ -352,6 +401,14 @@ func (e *GZZpoolListCollector) Update(ch chan<- prometheus.Metric) error {
 	e.gzZpoolListTrimqWritePend.Collect(ch)	
 	e.gzZpoolListTrimqWriteActiv.Collect(ch)	
 
+	e.gzZpoolIostatSyncRead.Collect(ch)
+	e.gzZpoolIostatSyncWrite.Collect(ch)
+	e.gzZpoolIostatAsyncRead.Collect(ch)
+	e.gzZpoolIostatAsyncWrite.Collect(ch)
+
+	e.gzZpoolIostatReadTotal.Collect(ch)
+	e.gzZpoolIostatWriteTotal.Collect(ch)
+
 	return nil;
 }
 
@@ -361,7 +418,7 @@ func (e *GZZpoolListCollector) zpoolGetProps() error {
 	if eerr != nil {
 		level.Error(e.logger).Log("error on executing zpool get: %v", eerr)
 	} else {
-		perr := e.parseZpoolGetOutput(string(out))
+		perr := e.parseZpoolGetPropsOutput(string(out))
 		if perr != nil {
 			level.Error(e.logger).Log("error on parsing zpool get output: %v", perr)
 		}
@@ -374,7 +431,21 @@ func (e *GZZpoolListCollector) zpoolIostatLatenciesQueues() error {
 	if eerr != nil {
 		level.Error(e.logger).Log("error on executing zpool iostat: %v", eerr)
 	} else {
-		perr := e.parseZpoolIostatOutput(string(out))
+		perr := e.parseZpoolIostatLatenciesQueuesOutput(string(out))
+		if perr != nil {
+			level.Error(e.logger).Log("error on parsing zpool iostat output: %v", perr)
+		}
+	}
+	return nil
+}
+
+func (e *GZZpoolListCollector) zpoolIostatRequestSizes() error {
+	timestamp := time.Now().UnixNano() / 1e6
+	out, eerr := exec.Command("zpool", "iostat", "-prv").Output()
+	if eerr != nil {
+		level.Error(e.logger).Log("error on executing zpool iostat: %v", eerr)
+	} else {
+		perr := e.parseZpoolIostatRequestSizesOutput(string(out), timestamp)
 		if perr != nil {
 			level.Error(e.logger).Log("error on parsing zpool iostat output: %v", perr)
 		}
@@ -398,7 +469,7 @@ func (e *GZZpoolListCollector) zfsGetProps() error {
 }
 
 //rpool   size    33822867456     -
-func (e *GZZpoolListCollector) parseZpoolGetOutput(out string) error {
+func (e *GZZpoolListCollector) parseZpoolGetPropsOutput(out string) error {
 	outlines := strings.Split(out, "\n")
 	l := len(outlines)
 
@@ -502,7 +573,126 @@ func (e *GZZpoolListCollector) helperZpoolWithSet(pool string, vdev string,
 	return nil
 }
 
-func (e *GZZpoolListCollector) parseZpoolIostatOutput(out string) error {
+func parsePrefix(prefix string) (int, error) {
+	switch prefix {
+		case "512":
+			return 512, nil
+		case "1K":
+			return (1 * 1024), nil
+		case "2K":
+			return (2 * 1024), nil
+		case "4K":
+			return (4 * 1024), nil
+		case "8K":
+			return (8 * 1024), nil
+		case "16K":
+			return (16 * 1024), nil
+		case "32K":
+			return (32 * 1024), nil
+		case "64K":	
+			return (64 * 1024), nil
+		case "128K":
+			return (128 * 1024), nil
+		case "256K":
+			return (256 * 1024), nil
+		case "512K":
+			return (512 * 1024), nil
+		case "1M":
+			return (1 * 1024 * 1024), nil
+		case "2M":
+			return (2 * 1024 * 1024), nil
+		case "4M":
+			return (4 * 1024 * 1024), nil
+		case "8M":
+			return (8 * 1024 * 1024), nil
+		case "16M":
+			return (16 * 1024 * 1024), nil
+	}
+	return 0, error(nil)
+}
+
+func (e *GZZpoolListCollector) parseZpoolIostatRequestSizesOutput(out string, timestamp int64) error {
+	//var pool, vdev string
+	//var err error
+	tables := strings.Split(out[1:len(out)], "\n\n")
+	for _, table := range tables {
+		bytes_read_total := 0
+		bytes_write_total := 0
+		outlines := strings.Split(table, "\n")
+		l := len(outlines)
+		if l == 0 { 
+			return error(nil) 
+		}
+		device := strings.Fields(outlines[0])[0]
+		for _, line := range outlines[2:l] {
+			if len(line) == 0 { continue }
+			if strings.HasPrefix(line, "-") { continue }
+
+			parsed_line := strings.Fields(line)
+			req_size, err := parsePrefix(parsed_line[0])
+
+			ind, err := strconv.Atoi(parsed_line[1])
+			if err != nil { return err }
+			agg, err := strconv.Atoi(parsed_line[2])
+			if err != nil { return err }
+			ctr_sync_read := ind + agg
+
+			ind, err = strconv.Atoi(parsed_line[3])
+			if err != nil { return err }
+			agg, err = strconv.Atoi(parsed_line[4])
+			if err != nil { return err }
+			ctr_sync_write := ind + agg
+
+			ind, err = strconv.Atoi(parsed_line[5])
+			if err != nil { return err }
+			agg, err = strconv.Atoi(parsed_line[6])
+			if err != nil { return err }
+			ctr_async_read := ind + agg
+
+			ind, err = strconv.Atoi(parsed_line[7])
+			if err != nil { return err }
+			agg, err = strconv.Atoi(parsed_line[8])
+			if err != nil { return err }
+			ctr_async_write := (ind + agg)
+
+			bytes_read_total += (ctr_sync_read * req_size + ctr_async_read * req_size)
+			bytes_write_total += (ctr_sync_write * req_size + ctr_async_write * req_size)
+
+			e.gzZpoolIostatSyncRead.With(
+				prometheus.Labels{
+					"device": device, 
+					"req_size": parsed_line[0],
+					"timestamp": strconv.FormatInt(timestamp, 10)}).Set(float64(ctr_sync_read))
+			e.gzZpoolIostatSyncWrite.With(
+				prometheus.Labels{
+					"device": device, 
+					"req_size": parsed_line[0],
+					"timestamp": strconv.FormatInt(timestamp,10)}).Set(float64(ctr_sync_write))
+			e.gzZpoolIostatAsyncRead.With(
+				prometheus.Labels{
+					"device": device, 
+					"req_size": parsed_line[0],
+					"timestamp": strconv.FormatInt(timestamp,10)}).Set(float64(ctr_async_read))
+			e.gzZpoolIostatAsyncWrite.With(
+				prometheus.Labels{
+					"device": device, 
+					"req_size": parsed_line[0],
+					"timestamp":strconv.FormatInt(timestamp,10)}).Set(float64(ctr_async_write))
+			if err != nil { return err }
+		}
+		e.gzZpoolIostatReadTotal.With(prometheus.Labels{
+			"device": device, 
+			"timestamp":strconv.FormatInt(timestamp,10)}).Set(float64(bytes_read_total))
+		e.gzZpoolIostatWriteTotal.With(prometheus.Labels{
+			"device": device, 
+			"timestamp":strconv.FormatInt(timestamp,10)}).Set(float64(bytes_write_total))
+
+
+	}
+	return nil
+}
+
+func (e *GZZpoolListCollector) parseZpoolIostatLatenciesQueuesOutput(out string) error {
 	var pool, vdev string
 	var err error
 	outlines := strings.Split(out, "\n")
