@@ -7,7 +7,7 @@
 package collector
 
 import (
-//	"fmt"
+	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -615,6 +615,14 @@ func (e *GZZpoolListCollector) parseZpoolIostatRequestSizesOutput(out string, ti
 	//var pool, vdev string
 	//var err error
 	tables := strings.Split(out[1:len(out)], "\n\n")
+
+	e.gzZpoolIostatSyncRead.Reset()
+	e.gzZpoolIostatSyncWrite.Reset()
+	e.gzZpoolIostatAsyncRead.Reset()
+	e.gzZpoolIostatAsyncWrite.Reset()
+	e.gzZpoolIostatReadTotal.Reset()
+	e.gzZpoolIostatWriteTotal.Reset()
+
 	for _, table := range tables {
 		bytes_read_total := 0
 		bytes_write_total := 0
@@ -680,9 +688,11 @@ func (e *GZZpoolListCollector) parseZpoolIostatRequestSizesOutput(out string, ti
 					"timestamp":strconv.FormatInt(timestamp,10)}).Set(float64(ctr_async_write))
 			if err != nil { return err }
 		}
+		fmt.Print("set read total, ", device, "\n")
 		e.gzZpoolIostatReadTotal.With(prometheus.Labels{
 			"device": device, 
 			"timestamp":strconv.FormatInt(timestamp,10)}).Set(float64(bytes_read_total))
+		fmt.Print("set write total, ", device, "\n")
 		e.gzZpoolIostatWriteTotal.With(prometheus.Labels{
 			"device": device, 
 			"timestamp":strconv.FormatInt(timestamp,10)}).Set(float64(bytes_write_total))
