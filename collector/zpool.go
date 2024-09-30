@@ -441,7 +441,7 @@ func (e *GZZpoolListCollector) zpoolIostatLatenciesQueues() error {
 
 func (e *GZZpoolListCollector) zpoolIostatRequestSizes() error {
 	timestamp := time.Now().UnixNano() / 1e6
-	out, eerr := exec.Command("zpool", "iostat", "-prv").Output()
+	out, eerr := exec.Command("zpool", "iostat", "-pr").Output()
 	if eerr != nil {
 		level.Error(e.logger).Log("error on executing zpool iostat: %v", eerr)
 	} else {
