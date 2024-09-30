@@ -7,7 +7,7 @@
 package collector
 
 import (
-	"fmt"
+//	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -688,11 +688,9 @@ func (e *GZZpoolListCollector) parseZpoolIostatRequestSizesOutput(out string, ti
 					"timestamp":strconv.FormatInt(timestamp,10)}).Set(float64(ctr_async_write))
 			if err != nil { return err }
 		}
-		fmt.Print("set read total, ", device, "\n")
 		e.gzZpoolIostatReadTotal.With(prometheus.Labels{
 			"device": device, 
 			"timestamp":strconv.FormatInt(timestamp,10)}).Set(float64(bytes_read_total))
-		fmt.Print("set write total, ", device, "\n")
 		e.gzZpoolIostatWriteTotal.With(prometheus.Labels{
 			"device": device, 
 			"timestamp":strconv.FormatInt(timestamp,10)}).Set(float64(bytes_write_total))
