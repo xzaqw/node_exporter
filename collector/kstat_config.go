@@ -2,7 +2,7 @@ package collector
 
 import (
 	"gopkg.in/yaml.v2"
-	"io/ioutil"
+	"os"
 	"regexp"
 )
 
@@ -33,7 +33,7 @@ func (cfg *kstatConfig) init() error {
 		cfgFile kstatConfig
 	)
 
-	yamlFile, err := ioutil.ReadFile(kstatCfgFilePath())
+	yamlFile, err := os.ReadFile(kstatCfgFilePath())
 
 	if err != nil {
 		return err
