@@ -1,6 +1,9 @@
 package collector
 
 import (
+	"fmt"
+	"math"
+
 	//	"fmt"
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
@@ -9,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 )
+
+const kStatSnaptime = "snaptime"
 
 type kstatStat struct {
 	ID          string
@@ -50,36 +55,24 @@ func NewKstatCollector(logger log.Logger) (Collector, error) {
 		module := kstatModule{}
 		module.ID = cfgModule.ID
 		for _, cfgName := range cfgModule.KstatNames {
-			name := kstatName{}
-			name.ID = cfgName.ID
+			name := kstatName{ID: cfgName.ID}
 			for _, cfgStat := range cfgName.KstatStats {
-				stat := kstatStat{}
-				stat.ID = cfgStat.ID
-				desc := prometheus.NewDesc(
-					prometheus.BuildFQName(
-						namespace,
-						"kstat_"+strings.ReplaceAll(cfgModule.ID, "-", "_")+"_"+
-							strings.ReplaceAll(cfgName.ID.String(), "-", "_"),
-						strings.ReplaceAll(cfgStat.ID, "-", "_")+"_"+cfgStat.Suffix),
-					cfgStat.Help, []string{cfgName.LabelString}, nil)
-				stat.desc = typedDesc{desc, prometheus.CounterValue}
-				stat.scaleFactor = float64(cfgStat.ScaleFactor)
+				stat := kstatStat{
+					ID:          cfgStat.ID,
+					scaleFactor: cfgStat.ScaleFactor,
+					desc:        createTypedMetricDescription(prometheus.CounterValue, cfgModule, cfgName, cfgStat),
+				}
 				name.stats = append(name.stats, stat)
 			}
 
 			//Snaptime is separate kind because of
 			//different way to retrieve this metric
-			stat := kstatStat{}
-			stat.ID = "snaptime"
-			desc := prometheus.NewDesc(
-				prometheus.BuildFQName(
-					namespace,
-					"kstat_"+cfgModule.ID+"_"+cfgName.ID.String(),
-					"snaptime"),
-				cfgModule.ID+"::"+cfgName.ID.String()+":"+"snaptime",
-				[]string{"inst"}, nil)
-			stat.desc = typedDesc{desc, prometheus.CounterValue}
+			stat := kstatStat{
+				ID:   kStatSnaptime,
+				desc: createSnapTimeMetricDescription(cfgModule, cfgName),
+			}
 			name.stats = append(name.stats, stat)
+
 			module.names = append(module.names, name)
 		}
 		c.modules = append(c.modules, module)
@@ -155,7 +148,7 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 				}
 				for _, ksName := range ksNames {
 					for _, stat := range name.stats {
-						if strings.HasSuffix(stat.ID, "snaptime") {
+						if strings.HasSuffix(stat.ID, kStatSnaptime) {
 							metricValue = float64(ksName.Snaptime)
 						} else {
 							named, err = ksName.GetNamed(stat.ID)
@@ -169,12 +162,74 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 						//Round the value down to the number integer value
 						//like 2.45 to 2.0. At the same time we have
 						//to stick to float64 type.
-						ch <- stat.desc.mustNewConstMetric(float64(int(metricValue)),
-							strconv.Itoa(inst))
+
+						ch <- stat.desc.mustNewConstMetric(
+							math.Floor(metricValue),
+							strconv.Itoa(inst),
+						)
 					}
 				}
 			}
 		}
 	}
 	return nil
+}
+
+func createSnapTimeMetricDescription(module KstatModule, name KstatName) typedDesc {
+	desc := prometheus.NewDesc(
+		prometheus.BuildFQName(
+			namespace,
+			formatSubsystemName(module.ID, name.ID.String()),
+			kStatSnaptime,
+		),
+		formatSnapTimeMetricName(module.ID, name.ID.String()),
+		[]string{"inst"},
+		nil,
+	)
+	return typedDesc{desc, prometheus.CounterValue}
+}
+
+func createTypedMetricDescription(
+	valueType prometheus.ValueType,
+	module KstatModule,
+	name KstatName,
+	stat KstatStat,
+) typedDesc {
+	return typedDesc{
+		desc:      createMetricDescription(module, name, stat),
+		valueType: valueType,
+	}
+}
+
+func createMetricDescription(module KstatModule, name KstatName, stat KstatStat) *prometheus.Desc {
+	return prometheus.NewDesc(
+		prometheus.BuildFQName(
+			namespace,
+			formatSubsystemName(module.ID, name.ID.String()),
+			formatMetricName(stat.ID, stat.Suffix),
+		),
+		stat.Help,
+		[]string{name.LabelString},
+		nil,
+	)
+}
+
+func formatSubsystemName(module, name string) string {
+	return fmt.Sprintf(
+		"kstat_%s_%s",
+		hyphenToUnderscore(module),
+		hyphenToUnderscore(name),
+	)
+}
+
+func formatSnapTimeMetricName(module, name string) string {
+	return fmt.Sprintf("%s::%s:%s", module, name, kStatSnaptime)
+}
+
+func formatMetricName(name, suffix string) string {
+	return fmt.Sprintf("%s_%s", hyphenToUnderscore(name), suffix)
+}
+
+func hyphenToUnderscore(s string) string {
+	return strings.ReplaceAll(s, "-", "_")
 }
