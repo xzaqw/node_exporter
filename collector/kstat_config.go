@@ -3,6 +3,7 @@ package collector
 import (
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"regexp"
 )
 
 type kstatConfig struct {
@@ -15,7 +16,7 @@ type KstatModule struct {
 }
 
 type KstatName struct {
-	ID          string      `yaml:"id"`
+	ID          re          `yaml:"id"`
 	LabelString string      `yaml:"label_string"`
 	KstatStats  []KstatStat `yaml:"kstat_stats"`
 }
@@ -60,7 +61,7 @@ func (cfg *kstatConfig) init() error {
 				s.ID = cfgStat.ID
 
 				if len(cfgStat.Help) == 0 {
-					s.Help = cfgModule.ID + "::" + cfgName.ID + ":" + cfgStat.ID
+					s.Help = cfgModule.ID + "::" + cfgName.ID.String() + ":" + cfgStat.ID
 				} else {
 					s.Help = cfgStat.Help
 				}
@@ -80,5 +81,22 @@ func (cfg *kstatConfig) init() error {
 		}
 		cfg.KstatModules = append(cfg.KstatModules, m)
 	}
+	return nil
+}
+
+type re struct {
+	*regexp.Regexp
+}
+
+func (r *re) UnmarshalYAML(unmarshal func(any) error) error {
+	var s string
+	if err := unmarshal(&s); err != nil {
+		return err
+	}
+	regex, err := regexp.Compile(s)
+	if err != nil {
+		return err
+	}
+	r.Regexp = regex
 	return nil
 }
