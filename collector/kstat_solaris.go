@@ -18,11 +18,13 @@ const kStatSnaptime = "snaptime"
 type kstatStat struct {
 	ID          string
 	scaleFactor float64
-	desc        typedDesc
+	suffix      string
+	help        string
 }
 
 type kstatName struct {
 	ID    re
+	label string
 	stats []kstatStat
 }
 
@@ -52,15 +54,15 @@ func NewKstatCollector(logger log.Logger) (Collector, error) {
 	}
 
 	for _, cfgModule := range cfg.KstatModules {
-		module := kstatModule{}
-		module.ID = cfgModule.ID
+		module := kstatModule{ID: cfgModule.ID}
 		for _, cfgName := range cfgModule.KstatNames {
-			name := kstatName{ID: cfgName.ID}
+			name := kstatName{ID: cfgName.ID, label: cfgName.LabelString}
 			for _, cfgStat := range cfgName.KstatStats {
 				stat := kstatStat{
 					ID:          cfgStat.ID,
 					scaleFactor: cfgStat.ScaleFactor,
-					desc:        createTypedMetricDescription(prometheus.CounterValue, cfgModule, cfgName, cfgStat),
+					suffix:      cfgStat.Suffix,
+					help:        cfgStat.Help,
 				}
 				name.stats = append(name.stats, stat)
 			}
@@ -68,8 +70,7 @@ func NewKstatCollector(logger log.Logger) (Collector, error) {
 			//Snaptime is separate kind because of
 			//different way to retrieve this metric
 			stat := kstatStat{
-				ID:   kStatSnaptime,
-				desc: createSnapTimeMetricDescription(cfgModule, cfgName),
+				ID: kStatSnaptime,
 			}
 			name.stats = append(name.stats, stat)
 
@@ -126,7 +127,15 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 				}
 
 				for _, stat := range name.stats {
-					ch <- stat.desc.mustNewConstMetric(
+					desc := createTypedMetricDescription(
+						prometheus.CounterValue,
+						module.ID,
+						"vminfo",
+						formatMetricName(stat.ID, stat.suffix),
+						name.label,
+						stat.help,
+					)
+					ch <- desc.mustNewConstMetric(
 						float64(vminfoDict[stat.ID])*stat.scaleFactor, "0")
 				}
 				continue
@@ -148,22 +157,31 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 				}
 				for _, ksName := range ksNames {
 					for _, stat := range name.stats {
+						var desc typedDesc
 						if strings.HasSuffix(stat.ID, kStatSnaptime) {
 							metricValue = float64(ksName.Snaptime)
+							desc = createSnapTimeMetricDescription(ksName.Module, stat.ID)
 						} else {
 							named, err = ksName.GetNamed(stat.ID)
 							if err != nil {
-								c.throwError(module.ID, name.ID.String(), stat.ID, inst, err)
+								c.throwError(module.ID, ksName.Name, stat.ID, inst, err)
 								continue
 							}
 							metricValue = float64(named.UintVal) * stat.scaleFactor
+							desc = createTypedMetricDescription(
+								prometheus.CounterValue,
+								module.ID,
+								ksName.Name,
+								formatMetricName(stat.ID, stat.suffix),
+								name.label,
+								stat.help,
+							)
 						}
 
 						//Round the value down to the number integer value
 						//like 2.45 to 2.0. At the same time we have
 						//to stick to float64 type.
-
-						ch <- stat.desc.mustNewConstMetric(
+						ch <- desc.mustNewConstMetric(
 							math.Floor(metricValue),
 							strconv.Itoa(inst),
 						)
@@ -175,14 +193,14 @@ func (c *kstatCollector) Update(ch chan<- prometheus.Metric) error {
 	return nil
 }
 
-func createSnapTimeMetricDescription(module KstatModule, name KstatName) typedDesc {
+func createSnapTimeMetricDescription(module, name string) typedDesc {
 	desc := prometheus.NewDesc(
 		prometheus.BuildFQName(
 			namespace,
-			formatSubsystemName(module.ID, name.ID.String()),
+			formatSubsystemName(module, name),
 			kStatSnaptime,
 		),
-		formatSnapTimeMetricName(module.ID, name.ID.String()),
+		formatSnapTimeMetricName(module, name),
 		[]string{"inst"},
 		nil,
 	)
@@ -191,25 +209,27 @@ func createSnapTimeMetricDescription(module KstatModule, name KstatName) typedDe
 
 func createTypedMetricDescription(
 	valueType prometheus.ValueType,
-	module KstatModule,
-	name KstatName,
-	stat KstatStat,
+	module,
+	name,
+	stat,
+	label,
+	help string,
 ) typedDesc {
 	return typedDesc{
-		desc:      createMetricDescription(module, name, stat),
+		desc:      createMetricDescription(module, name, stat, label, help),
 		valueType: valueType,
 	}
 }
 
-func createMetricDescription(module KstatModule, name KstatName, stat KstatStat) *prometheus.Desc {
+func createMetricDescription(module, name, stat, label, help string) *prometheus.Desc {
 	return prometheus.NewDesc(
 		prometheus.BuildFQName(
 			namespace,
-			formatSubsystemName(module.ID, name.ID.String()),
-			formatMetricName(stat.ID, stat.Suffix),
+			formatSubsystemName(module, name),
+			stat,
 		),
-		stat.Help,
-		[]string{name.LabelString},
+		help,
+		[]string{label},
 		nil,
 	)
 }
