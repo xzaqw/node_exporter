@@ -211,7 +211,7 @@ func getDladmConfig() ([]dladmLinkConfigOutput, error) {
 			continue
 		}
 
-		mtu, err := strconv.ParseUint(values[2], 10, 16)
+		mtu, err := strconv.ParseUint(values[2], 10, 64)
 		if err != nil {
 			return nil, newDladmParsingError(values[0], "mtu", err)
 		}
