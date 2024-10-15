@@ -272,32 +272,32 @@ func NewGZZpoolListExporter(logger log.Logger) (Collector, error) {
 		gzZpoolIostatSyncRead: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, "zpool", "iostat_sync_read_operations_total"),
 			Help: "zpool iostat sync read operations (ind + agg)",
-    		}, []string{"req_size", "device", "timestamp"}),
+    		}, []string{"req_size", "pool", "timestamp"}),
 
 		gzZpoolIostatSyncWrite: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, "zpool", "iostat_sync_write_operations_total"),
 			Help: "zpool iostat sync write operations (ind + agg)",
-    		}, []string{"req_size", "device", "timestamp"}),
+    		}, []string{"req_size", "pool", "timestamp"}),
 
 		gzZpoolIostatAsyncRead: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, "zpool", "iostat_async_read_operations_total"),
 			Help: "zpool iostat async read operations (ind + agg)",
-    		}, []string{"req_size", "device", "timestamp"}),
+    		}, []string{"req_size", "pool", "timestamp"}),
 
 		gzZpoolIostatAsyncWrite: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, "zpool", "iostat_async_write_operations_total"),
 			Help: "zpool iostat async write operations (ind + agg)",
-    		}, []string{"req_size", "device", "timestamp"}),
+    		}, []string{"req_size", "pool", "timestamp"}),
 
 		gzZpoolIostatReadTotal: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, "zpool", "iostat_read_bytes_total"),
 			Help: "Sum of async + sync read operations. Each operation count (ind + agg) is multiplied by its related operation size.",
-    		}, []string{"device", "timestamp"}),
+    		}, []string{"pool", "timestamp"}),
 
 		gzZpoolIostatWriteTotal: prometheus.NewGaugeVec(prometheus.GaugeOpts{
 			Name: prometheus.BuildFQName(namespace, "zpool", "iostat_write_bytes_total"),
 			Help: "Sum of async + sync write operations. Each operation count (ind + agg) is multiplied by its related operation size.",
-    		}, []string{"device", "timestamp"}),
+    		}, []string{"pool", "timestamp"}),
 
 		logger: logger,
 
@@ -631,7 +631,7 @@ func (e *GZZpoolListCollector) parseZpoolIostatRequestSizesOutput(out string, ti
 		if l == 0 { 
 			return error(nil) 
 		}
-		device := strings.Fields(outlines[0])[0]
+		pool := strings.Fields(outlines[0])[0]
 		for _, line := range outlines[2:l] {
 			if len(line) == 0 { continue }
 			if strings.HasPrefix(line, "-") { continue }
@@ -668,31 +668,31 @@ func (e *GZZpoolListCollector) parseZpoolIostatRequestSizesOutput(out string, ti
 
 			e.gzZpoolIostatSyncRead.With(
 				prometheus.Labels{
-					"device": device, 
+					"pool": pool, 
 					"req_size": parsed_line[0],
 					"timestamp": strconv.FormatInt(timestamp, 10)}).Set(float64(ctr_sync_read))
 			e.gzZpoolIostatSyncWrite.With(
 				prometheus.Labels{
-					"device": device, 
+					"pool": pool, 
 					"req_size": parsed_line[0],
 					"timestamp": strconv.FormatInt(timestamp,10)}).Set(float64(ctr_sync_write))
 			e.gzZpoolIostatAsyncRead.With(
 				prometheus.Labels{
-					"device": device, 
+					"pool": pool, 
 					"req_size": parsed_line[0],
 					"timestamp": strconv.FormatInt(timestamp,10)}).Set(float64(ctr_async_read))
 			e.gzZpoolIostatAsyncWrite.With(
 				prometheus.Labels{
-					"device": device, 
+					"pool": pool, 
 					"req_size": parsed_line[0],
 					"timestamp":strconv.FormatInt(timestamp,10)}).Set(float64(ctr_async_write))
 			if err != nil { return err }
 		}
 		e.gzZpoolIostatReadTotal.With(prometheus.Labels{
-			"device": device, 
+			"pool": pool, 
 			"timestamp":strconv.FormatInt(timestamp,10)}).Set(float64(bytes_read_total))
 		e.gzZpoolIostatWriteTotal.With(prometheus.Labels{
-			"device": device, 
+			"pool": pool, 
 			"timestamp":strconv.FormatInt(timestamp,10)}).Set(float64(bytes_write_total))
 
 
