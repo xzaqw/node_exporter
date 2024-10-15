@@ -105,6 +105,13 @@ func (c *netCollector) dladmConfGet() error {
 		over = values[5]
 
 		timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
+
+		c.class.Reset()
+		c.mtu.Reset()
+		c.state.Reset()
+		c.bridge.Reset()
+		c.over.Reset()
+
 		c.class.With(prometheus.Labels{"link": link, "class": class, "timestamp": timestamp}).Set(0)
 		c.mtu.With(prometheus.Labels{"link": link, "mtu": mtu, "timestamp": timestamp}).Set(0)
 		c.state.With(prometheus.Labels{"link": link, "state": state, "timestamp": timestamp}).Set(0)
@@ -160,6 +167,14 @@ func (c *netCollector) dladmStatsGet() error {
 		}
 
 		timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
+
+		c.iPackets.Reset()
+		c.oPackets.Reset()
+		c.rBytes.Reset()
+		c.oBytes.Reset()
+		c.iErrors.Reset()
+		c.oErrors.Reset()
+
 		c.iPackets.With(prometheus.Labels{"link": link, "timestamp": timestamp}).Set(float64(ipackets))
 		c.oPackets.With(prometheus.Labels{"link": link, "timestamp": timestamp}).Set(float64(opackets))
 		c.rBytes.With(prometheus.Labels{"link": link, "timestamp": timestamp}).Set(float64(rbytes))
