@@ -107,8 +107,9 @@ func (c *netCollector) dladmConfGet() error {
 	if err != nil {
 		return fmt.Errorf("getting dladm links configs: %w", err)
 	}
+
+	timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 	for _, conf := range configs {
-		timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 		mtu := strconv.FormatUint(conf.mtu, 10)
 
 		c.class.With(
@@ -136,9 +137,8 @@ func (c *netCollector) dladmStatsGet() error {
 		return fmt.Errorf("getting dladm links stats: %w", err)
 	}
 
+	timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 	for _, stats := range linksStats {
-		timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
-
 		c.iPackets.With(
 			prometheus.Labels{"link": stats.link, "timestamp": timestamp},
 		).Set(float64(stats.iPackets))
