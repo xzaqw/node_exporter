@@ -1,6 +1,8 @@
 package collector
 
 import (
+	"bufio"
+	"bytes"
 	"fmt"
 	"github.com/go-kit/log"
 	"github.com/prometheus/client_golang/prometheus"
@@ -10,7 +12,7 @@ import (
 	"time"
 )
 
-type dladmLinkConfOutput struct {
+type dladmLinkConfigOutput struct {
 	link   string
 	class  string
 	mtu    uint64
@@ -101,7 +103,7 @@ func NewNetCollector(logger log.Logger) (Collector, error) {
 }
 
 func (c *netCollector) dladmConfGet() error {
-	configs, err := getDladmLinksConfig()
+	configs, err := getDladmConfig()
 	if err != nil {
 		return fmt.Errorf("getting dladm links configs: %w", err)
 	}
@@ -129,7 +131,7 @@ func (c *netCollector) dladmConfGet() error {
 }
 
 func (c *netCollector) dladmStatsGet() error {
-	linksStats, err := getDladmLinksStats()
+	linksStats, err := getDladmStats()
 	if err != nil {
 		return fmt.Errorf("getting dladm links stats: %w", err)
 	}
@@ -190,7 +192,7 @@ func (c *netCollector) Describe(ch chan<- *prometheus.Desc) {
 	c.over.Describe(ch)
 }
 
-func getDladmLinksConfig() ([]dladmLinkConfOutput, error) {
+func getDladmConfig() ([]dladmLinkConfigOutput, error) {
 	out, err := exec.Command(
 		"dladm", "show-link", "-po",
 		"link,class,mtu,state,bridge,over",
@@ -199,11 +201,12 @@ func getDladmLinksConfig() ([]dladmLinkConfOutput, error) {
 		return nil, fmt.Errorf("dladm: %w", err)
 	}
 
-	var configs []dladmLinkConfOutput
+	var configs []dladmLinkConfigOutput
 
-	outLines := strings.Split(string(out), "\n")
-	for _, l := range outLines {
-		values := strings.Split(l, ":")
+	reader := bytes.NewReader(out)
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		values := strings.Split(scanner.Text(), ":")
 		if values[0] == "" {
 			continue
 		}
@@ -213,7 +216,7 @@ func getDladmLinksConfig() ([]dladmLinkConfOutput, error) {
 			return nil, newDladmParsingError(values[0], "mtu", err)
 		}
 
-		conf := dladmLinkConfOutput{
+		conf := dladmLinkConfigOutput{
 			link:   values[0],
 			class:  values[1],
 			mtu:    mtu,
@@ -223,10 +226,14 @@ func getDladmLinksConfig() ([]dladmLinkConfOutput, error) {
 		}
 		configs = append(configs, conf)
 	}
+
+	if scanner.Err() != nil {
+		return nil, fmt.Errorf("reading dladm config output: %w", err)
+	}
 	return configs, nil
 }
 
-func getDladmLinksStats() ([]dladmLinkStatsOutput, error) {
+func getDladmStats() ([]dladmLinkStatsOutput, error) {
 	out, err := exec.Command(
 		"dladm", "show-link", "-pso",
 		"link,ipackets,opackets,rbytes,obytes,ierrors,oerrors",
@@ -237,9 +244,10 @@ func getDladmLinksStats() ([]dladmLinkStatsOutput, error) {
 
 	var linksStats []dladmLinkStatsOutput
 
-	outLines := strings.Split(string(out), "\n")
-	for _, l := range outLines {
-		values := strings.Split(l, ":")
+	reader := bytes.NewReader(out)
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		values := strings.Split(scanner.Text(), ":")
 		if values[0] == "" {
 			continue
 		}
@@ -279,6 +287,10 @@ func getDladmLinksStats() ([]dladmLinkStatsOutput, error) {
 			oErrors:  oErrors,
 		}
 		linksStats = append(linksStats, stats)
+	}
+
+	if scanner.Err() != nil {
+		return nil, fmt.Errorf("reading dladm stats output: %w", err)
 	}
 	return linksStats, nil
 }
