@@ -91,6 +91,7 @@ func (c *netCollector) dladmConfGet() error {
 	if err != nil {
 		return err
 	}
+
 	outlines := strings.Split(string(out), "\n")
 	for _, l := range outlines {
 		values := strings.Split(l, ":")
@@ -105,12 +106,6 @@ func (c *netCollector) dladmConfGet() error {
 		over = values[5]
 
 		timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
-
-		c.class.Reset()
-		c.mtu.Reset()
-		c.state.Reset()
-		c.bridge.Reset()
-		c.over.Reset()
 
 		c.class.With(prometheus.Labels{"link": link, "class": class, "timestamp": timestamp}).Set(0)
 		c.mtu.With(prometheus.Labels{"link": link, "mtu": mtu, "timestamp": timestamp}).Set(0)
@@ -168,13 +163,6 @@ func (c *netCollector) dladmStatsGet() error {
 
 		timestamp := strconv.FormatInt(time.Now().UnixMilli(), 10)
 
-		c.iPackets.Reset()
-		c.oPackets.Reset()
-		c.rBytes.Reset()
-		c.oBytes.Reset()
-		c.iErrors.Reset()
-		c.oErrors.Reset()
-
 		c.iPackets.With(prometheus.Labels{"link": link, "timestamp": timestamp}).Set(float64(ipackets))
 		c.oPackets.With(prometheus.Labels{"link": link, "timestamp": timestamp}).Set(float64(opackets))
 		c.rBytes.With(prometheus.Labels{"link": link, "timestamp": timestamp}).Set(float64(rbytes))
@@ -194,6 +182,7 @@ func (c *netCollector) dladmStatsGet() error {
 func (c *netCollector) Update(ch chan<- prometheus.Metric) error {
 	c.dladmConfGet()
 	c.dladmStatsGet()
+
 	c.iPackets.Collect(ch)
 	c.oPackets.Collect(ch)
 	c.rBytes.Collect(ch)
@@ -205,6 +194,8 @@ func (c *netCollector) Update(ch chan<- prometheus.Metric) error {
 	c.state.Collect(ch)
 	c.bridge.Collect(ch)
 	c.over.Collect(ch)
+
+	c.ResetVectors()
 	return nil
 }
 
@@ -220,6 +211,20 @@ func (c *netCollector) Describe(ch chan<- *prometheus.Desc) {
 	c.state.Describe(ch)
 	c.bridge.Describe(ch)
 	c.over.Describe(ch)
+}
+
+func (c *netCollector) ResetVectors() {
+	c.iPackets.Reset()
+	c.oPackets.Reset()
+	c.rBytes.Reset()
+	c.oBytes.Reset()
+	c.iErrors.Reset()
+	c.oErrors.Reset()
+	c.class.Reset()
+	c.mtu.Reset()
+	c.state.Reset()
+	c.bridge.Reset()
+	c.over.Reset()
 }
 
 func parseDladmOutput(out string) error {
