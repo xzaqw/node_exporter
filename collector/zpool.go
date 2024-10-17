@@ -737,11 +737,19 @@ func (e *GZZpoolListCollector) parseZpoolIostatLatenciesQueuesOutput(out []byte)
 		line := scanner.Text()
 
 		vdev = "-"
+
+		// Delimiter between pools.
 		if strings.HasPrefix(line, "-") {
 			continue
 		}
 		parsedLine := strings.Fields(line)
 		if len(parsedLine) == 0 {
+			continue
+		}
+
+		// Special devices, such as "logs" and "cache", should not be mistaken
+		// for pools.
+		if parsedLine[1] == "-" {
 			continue
 		}
 
