@@ -726,7 +726,7 @@ func (e *GZZpoolListCollector) parseZpoolIostatRequestSizesOutput(out string, ti
 }
 
 func (e *GZZpoolListCollector) parseZpoolIostatLatenciesQueuesOutput(out []byte) error {
-	var pool, vdev string
+	var pool, vdev, vdevPrefix string
 	var err error
 
 	out = trimPrefixLines(out, 3)
@@ -740,6 +740,8 @@ func (e *GZZpoolListCollector) parseZpoolIostatLatenciesQueuesOutput(out []byte)
 
 		// Delimiter between pools.
 		if strings.HasPrefix(line, "-") {
+			pool = ""
+			vdevPrefix = ""
 			continue
 		}
 		parsedLine := strings.Fields(line)
@@ -747,17 +749,24 @@ func (e *GZZpoolListCollector) parseZpoolIostatLatenciesQueuesOutput(out []byte)
 			continue
 		}
 
-		// Special devices, such as "logs" and "cache", should not be mistaken
-		// for pools.
-		if parsedLine[1] == "-" {
-			continue
-		}
-
 		//Determine if its pool or vdev info string
 		if strings.HasPrefix(line, " ") {
 			vdev = parsedLine[0]
+			if vdevPrefix != "" {
+				vdev = fmt.Sprintf("%s/%s", vdevPrefix, vdev)
+			}
 		} else {
-			pool = parsedLine[0]
+			if pool == "" {
+				pool = parsedLine[0]
+			} else {
+				vdevPrefix = parsedLine[0]
+			}
+		}
+
+		// Special devices, such as "logs" and "cache", does not provide
+		// stats on the same line.
+		if parsedLine[1] == "-" {
+			continue
 		}
 		/*
 			0: name
