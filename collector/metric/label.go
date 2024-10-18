@@ -1,12 +1,17 @@
 package metric
 
 import (
+	"github.com/alecthomas/kingpin/v2"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
 const timestampLabelName = "timestamp"
 
-var isTimestampLabelDisabled = false
+var isTimestampLabelDisabled = kingpin.Flag(
+	"metrics.label.timestamp.disabled",
+	"Defines if a 'timestamp' label should be removed from metrics"+
+		" defined in custom collectors.",
+).Default("false").Bool()
 
 func NewLabelNames(labels ...string) []string {
 	shouldResize := false
@@ -18,7 +23,7 @@ func NewLabelNames(labels ...string) []string {
 			writeI++
 			continue
 		}
-		if isTimestampLabelDisabled {
+		if *isTimestampLabelDisabled {
 			shouldResize = true
 		} else {
 			break
@@ -34,7 +39,7 @@ func NewLabelNames(labels ...string) []string {
 
 func NewLabels(labels prometheus.Labels) prometheus.Labels {
 	_, includesTimestamp := labels[timestampLabelName]
-	if includesTimestamp && isTimestampLabelDisabled {
+	if includesTimestamp && *isTimestampLabelDisabled {
 		delete(labels, timestampLabelName)
 	}
 	return labels
